@@ -65,13 +65,13 @@ const T = {
     sendBtn:"发送邮件 →", sending:"打开邮件中…",
     sentTitle:"邮件已打开 📧", sentDesc:"邮件已在你的邮件客户端打开，报告内容已预填，确认发送即可。",
     copyLink:"复制报告内容", copied:"✓ 已复制到剪贴板",
-    shareLink:"分享报告链接", shareCopied:"✓ 链接已复制",
+    shareLink:"分享我的报告链接", shareCopied:"✓ 链接已复制！",
     downloadPdf:"下载 PDF 报告", downloading:"准备中…",
-    shareDesc:"把这个链接发给家长或好友，他们直接打开就能看到你的报告，无需登录。",
+    shareDesc:"生成专属链接，家长或老师打开即可在线查看你的完整报告，无需登录。",
     restart:"重新测评", back:"← 返回",
     inviteBtn:"邀请好友测评", inviteDesc:"把测评工具分享给朋友或同学",
     switchLang:"切换为英文版（重新生成）", switching:"正在切换…",
-    grade: g=>`${g}年级`,
+    grade: g=>g==="5under"?"5年级及以下":`${g}年级`,
     school: s=>{const m={us_public:"美国公立高中",us_private:"美国私立高中",ib:"IB课程",ap:"AP课程",intl:"国际学校",boarding:"寄宿学校",other:"其他"};return Array.isArray(s)?s.map(v=>m[v]||v).join(" · "):(m[s]||s);},
   },
   en: {
@@ -114,13 +114,13 @@ const T = {
     sendBtn:"Send Email →", sending:"Opening…",
     sentTitle:"Email Opened 📧", sentDesc:"Your email client opened with the report pre-filled. Hit send!",
     copyLink:"Copy Report Text", copied:"✓ Copied to clipboard",
-    shareLink:"Share Report Link", shareCopied:"✓ Link copied!",
+    shareLink:"Share My Report Link", shareCopied:"✓ Link copied!",
     downloadPdf:"Download PDF", downloading:"Preparing…",
-    shareDesc:"Share this link with parents or friends — they can view your report without any account.",
+    shareDesc:"Generate a link so parents or teachers can view your full report online — no login needed.",
     restart:"Start Over", back:"← Back",
     inviteBtn:"Invite a Friend", inviteDesc:"Share the assessment tool with friends",
     switchLang:"Switch to Chinese (regenerate)", switching:"Switching…",
-    grade: g=>`Grade ${g}`,
+    grade: g=>g==="5under"?"Grade 5 & Under":`Grade ${g}`,
     school: s=>{const m={us_public:"US Public",us_private:"US Private",ib:"IB Track",ap:"AP Track",intl:"Intl School",boarding:"Boarding",other:"Other"};return Array.isArray(s)?s.map(v=>m[v]||v).join(" · "):(m[s]||s);},
   },
 };
@@ -132,9 +132,10 @@ const buildQ = (lang) => {
     // ── Section 1: Profile
     { id:"pr1", sec:"profile", secLabel:zh?"基本定位":"Your Profile", secEmoji:"📋", secColor:G.blue,
       type:"choice", text:zh?"你目前在几年级？":"What grade are you in?",
-      opts:[{l:zh?"7年级":"Grade 7",v:"7",e:"🌱"},{l:zh?"8年级":"Grade 8",v:"8",e:"🌿"},
-            {l:zh?"9年级":"Grade 9",v:"9",e:"🔥"},{l:zh?"10年级":"Grade 10",v:"10",e:"⚡"},
-            {l:zh?"11年级":"Grade 11",v:"11",e:"🚀"},{l:zh?"12年级":"Grade 12",v:"12",e:"🎓"}]},
+      opts:[{l:zh?"5年级及以下":"Grade 5 & Under",v:"5under",e:"🌱"},{l:zh?"6年级":"Grade 6",v:"6",e:"🌿"},
+            {l:zh?"7年级":"Grade 7",v:"7",e:"🔥"},{l:zh?"8年级":"Grade 8",v:"8",e:"⚡"},
+            {l:zh?"9年级":"Grade 9",v:"9",e:"🚀"},{l:zh?"10年级":"Grade 10",v:"10",e:"⭐"},
+            {l:zh?"11年级":"Grade 11",v:"11",e:"💫"},{l:zh?"12年级":"Grade 12",v:"12",e:"🎓"}]},
     { id:"pr2", sec:"profile", secLabel:zh?"基本定位":"Your Profile", secEmoji:"📋", secColor:G.blue,
       type:"multi", max:3, text:zh?"你就读的学校类型？（可多选）":"What describes your school? (select all that apply)",
       opts:[{l:zh?"美国公立高中":"US Public School",v:"us_public",e:"🏫"},
@@ -340,7 +341,7 @@ Rules:
 
 // ─── CSS ──────────────────────────────────────────────────────────────────────
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Serif+Display:ital@0;1&family=Noto+Serif+SC:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Playfair+Display:ital@0;1&family=Noto+Serif+SC:wght@400;500;600&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:#F5F9F3;-webkit-font-smoothing:antialiased;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
@@ -353,7 +354,7 @@ body{background:#F5F9F3;-webkit-font-smoothing:antialiased;}
 .anim-fade{animation:fadeUp .4s cubic-bezier(.16,1,.3,1) both}
 .anim-pop{animation:pop .32s cubic-bezier(.16,1,.3,1) both}
 .anim-float{animation:float 3.5s ease-in-out infinite}
-textarea,input{font-family:'DM Sans',sans-serif;outline:none;}
+textarea,input{font-family:'Nunito',sans-serif;outline:none;}
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-thumb{background:rgba(106,175,61,.18);border-radius:4px}
 
@@ -366,23 +367,23 @@ textarea,input{font-family:'DM Sans',sans-serif;outline:none;}
 .mtag.on{border-color:#6AAF3D;background:rgba(106,175,61,.07);}
 .mtag.dim{opacity:.28;cursor:not-allowed;}
 
-.gbtn{font-family:'DM Sans',sans-serif;font-weight:700;border:none;border-radius:12px;cursor:pointer;transition:all .2s cubic-bezier(.16,1,.3,1);letter-spacing:.2px;}
+.gbtn{font-family:'Nunito',sans-serif;font-weight:700;border:none;border-radius:12px;cursor:pointer;transition:all .2s cubic-bezier(.16,1,.3,1);letter-spacing:.2px;}
 .gbtn:hover:not(:disabled){transform:translateY(-2px);}
 .gbtn:active:not(:disabled){transform:translateY(0);}
 .gbtn:disabled{opacity:.22;cursor:not-allowed;}
 
-.tbtn{padding:8px 15px;border-radius:20px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .16s;border:2px solid transparent;font-weight:700;background:transparent;white-space:nowrap;}
+.tbtn{padding:8px 15px;border-radius:20px;font-size:12px;font-family:'Nunito',sans-serif;cursor:pointer;transition:all .16s;border:2px solid transparent;font-weight:700;background:transparent;white-space:nowrap;}
 
 .card{background:#fff;border:1px solid rgba(26,58,42,.08);border-radius:16px;padding:22px 22px;margin-bottom:14px;}
-.sl{font-size:9px;letter-spacing:3px;text-transform:uppercase;margin-bottom:11px;font-weight:800;font-family:'DM Sans',sans-serif;opacity:.4;color:#1A3A2A;}
+.sl{font-size:9px;letter-spacing:3px;text-transform:uppercase;margin-bottom:11px;font-weight:800;font-family:'Nunito',sans-serif;opacity:.4;color:#1A3A2A;}
 .pill{display:inline-flex;align-items:center;gap:4px;padding:3px 11px;border-radius:20px;font-size:11px;font-weight:700;}
 .bar-wrap{height:5px;border-radius:3px;background:rgba(26,58,42,.07);overflow:hidden;margin-top:7px;}
 .bar-fill{height:100%;border-radius:3px;transform-origin:left;animation:barIn 1s cubic-bezier(.16,1,.3,1) .2s both;}
 
-.ifield{width:100%;padding:12px 15px;border:1.5px solid rgba(26,58,42,.14);border-radius:10px;font-size:14px;font-family:'DM Sans',sans-serif;color:#1E2B1E;background:#F5F9F3;transition:border-color .2s,background .2s;}
+.ifield{width:100%;padding:12px 15px;border:1.5px solid rgba(26,58,42,.14);border-radius:10px;font-size:14px;font-family:'Nunito',sans-serif;color:#1E2B1E;background:#F5F9F3;transition:border-color .2s,background .2s;}
 .ifield:focus{border-color:#6AAF3D;background:#fff;}
 
-.lbtn{position:fixed;top:16px;right:16px;z-index:200;padding:6px 14px;border-radius:20px;font-size:11px;font-family:'DM Sans',sans-serif;font-weight:700;cursor:pointer;background:rgba(26,58,42,.06);border:1px solid rgba(26,58,42,.12);color:rgba(26,58,42,.45);transition:all .2s;}
+.lbtn{position:fixed;top:16px;right:16px;z-index:200;padding:6px 14px;border-radius:20px;font-size:11px;font-family:'Nunito',sans-serif;font-weight:700;cursor:pointer;background:rgba(26,58,42,.06);border:1px solid rgba(26,58,42,.12);color:rgba(26,58,42,.45);transition:all .2s;}
 .lbtn:hover{background:rgba(26,58,42,.1);color:rgba(26,58,42,.8);}
 `;
 
@@ -426,6 +427,7 @@ export default function StarPathC() {
   const [sent, setSent]       = useState(false);
   const [copied, setCopied]   = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [shareLoading, setShareLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
   const t    = T[lang];
@@ -452,21 +454,22 @@ export default function StarPathC() {
   useEffect(() => {
     (async () => { try {
       const hash = window.location.hash;
-      const isV2 = hash.startsWith('#v2=');
-      const isLegacy = hash.startsWith('#report=');
-      if (isV2 || isLegacy) {
-        const encoded = hash.slice(isV2 ? 4 : 8);
+      const isReport = hash.startsWith('#report=');
+      const isShort = hash.startsWith('#r=');
+      if (isReport || isShort) {
+        const encoded = isShort
+          ? hash.slice(3).replace(/-/g,'+').replace(/_/g,'/')
+          : hash.slice(8);
         let payload;
         try {
-          // Try gzip decompress first (v2 format)
-          if (isV2 && typeof DecompressionStream !== 'undefined') {
+          // Try gzip decompress first
+          if (typeof DecompressionStream !== 'undefined') {
             const binary = Uint8Array.from(atob(encoded), c => c.charCodeAt(0));
             const stream = new DecompressionStream('gzip');
             const writer = stream.writable.getWriter();
             writer.write(binary); writer.close();
             const text = await new Response(stream.readable).text();
-            const slim = JSON.parse(text);
-            payload = { s2: slim };
+            payload = JSON.parse(text);
           } else {
             payload = JSON.parse(decodeURIComponent(escape(atob(encoded))));
           }
@@ -474,29 +477,23 @@ export default function StarPathC() {
           payload = JSON.parse(decodeURIComponent(escape(atob(encoded))));
         }
         if (payload.p) {
-          // Legacy full format
           setProfile(payload.p);
           if (payload.n) setName(payload.n);
           if (payload.e) setEmail(payload.e);
           if (payload.l) setLang(payload.l);
           setPhase('result'); setTab('summary');
-        } else if (payload.s) {
-          setProfile({ snap:payload.s, radar:payload.r, summary:payload.su, majors:payload.m, next:payload.nx });
-          if (payload.n) setName(payload.n);
-          if (payload.l) setLang(payload.l);
-          setPhase('result'); setTab('summary');
-        } else if (payload.s2) {
-          // V2 ultra-compact format
-          const s = payload.s2;
+        } else if (payload.b) {
+          // Short #r= format
           setProfile({
-            snap:{ personality:s.a, tagline:s.b, strengths:s.c, motivation:s.d, thinkingStyle:s.e, grade:s.f, schoolType:s.g },
-            radar: s.h,
-            summary:{ headline:s.i, keyInsight:s.j, watchOut:s.k, counselorNote:s.l2 },
-            majors: (s.m||[]).map(([n,f])=>({name:n,fit:f})),
-            next:{ month:s.o, key:s.p2 }
+            snap:{ archetype:payload.a, personality:payload.b, tagline:payload.c, strengths:payload.d, motivation:payload.e },
+            radar: payload.f,
+            summary:{ headline:payload.g, keyInsight:payload.h, watchOut:payload.i },
+            majors: (payload.j||[]).map(([n,f])=>({name:n,fit:f})),
+            next:{ month:payload.k, key:payload.l },
+            academic:{ directions:payload.m }
           });
-          if (s.q) setName(s.q);
-          if (s.r2) setLang(s.r2);
+          if (payload.n) setName(payload.n);
+          if (payload.o) setLang(payload.o);
           setPhase('result'); setTab('summary');
         }
       }
@@ -559,6 +556,7 @@ export default function StarPathC() {
         body:JSON.stringify({
           model:"claude-sonnet-4-20250514",
           max_tokens:4000,
+          temperature:0.3,
           system:buildPrompt(lang),
           messages:[{role:"user",content:`Student assessment responses:\n${lines.join("\n")}`}],
         }),
@@ -727,51 +725,35 @@ export default function StarPathC() {
   const shareReport = async () => {
     if (!profile) return;
     try {
-      // Ultra-compact: only the fields needed to render summary view
-      const slim = {
-        a: profile.snap?.personality,
-        b: profile.snap?.tagline,
-        c: profile.snap?.strengths,
-        d: profile.snap?.motivation,
-        e: profile.snap?.thinkingStyle,
-        f: profile.snap?.grade,
-        g: profile.snap?.schoolType,
-        h: profile.radar,
-        i: profile.summary?.headline,
-        j: profile.summary?.keyInsight,
-        k: profile.summary?.watchOut,
-        l2: profile.summary?.counselorNote,
-        m: (profile.majors||[]).map(x=>[x.name,x.fit]),
-        o: profile.next?.month,
-        p2: profile.next?.key,
-        q: name, r2: lang
-      };
-      // Compress via gzip if available (modern browsers), fallback to btoa
-      let encoded;
-      if (typeof CompressionStream !== 'undefined') {
-        const json = JSON.stringify(slim);
-        const stream = new CompressionStream('gzip');
-        const writer = stream.writable.getWriter();
-        writer.write(new TextEncoder().encode(json));
-        writer.close();
-        const compressed = await new Response(stream.readable).arrayBuffer();
-        encoded = btoa(String.fromCharCode(...new Uint8Array(compressed)));
-      } else {
-        encoded = btoa(unescape(encodeURIComponent(JSON.stringify(slim))));
-      }
-      const shareUrl = window.location.href.split('#')[0] + '#v2=' + encoded;
-      const doWrite = (url) => {
-        navigator.clipboard.writeText(url).then(() => {
-          setShareCopied(true); setTimeout(() => setShareCopied(false), 3000);
-        }).catch(() => {
-          const ta = document.createElement('textarea');
-          ta.value = url; ta.style.position='fixed'; ta.style.opacity='0';
-          document.body.appendChild(ta); ta.select(); document.execCommand('copy');
-          document.body.removeChild(ta);
-          setShareCopied(true); setTimeout(() => setShareCopied(false), 3000);
-        });
-      };
-      doWrite(shareUrl);
+      const P = profile;
+      const zh = lang === "zh";
+      // Build a friendly share message with the URL
+      const shareUrl = window.location.href.split('#')[0];
+      const archetype = P.snap?.archetype || P.snap?.personality || "";
+      const top1 = P.majors?.[0]?.name || "";
+      const msg = zh
+        ? `嗨！我刚完成了 StarPath Finder 星途潜能测评 🌟
+
+我的成长原型是「${archetype}」，最匹配的方向是 ${top1}。
+
+快来测测你的成长方向吧👇
+${shareUrl}`
+        : `Hey! I just completed the StarPath Finder assessment 🌟
+
+My growth archetype is "${archetype}" and my top match is ${top1}.
+
+Discover your own direction here 👇
+${shareUrl}`;
+
+      navigator.clipboard.writeText(msg).then(() => {
+        setShareCopied(true); setTimeout(() => setShareCopied(false), 3000);
+      }).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = msg; ta.style.position='fixed'; ta.style.opacity='0';
+        document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+        document.body.removeChild(ta);
+        setShareCopied(true); setTimeout(() => setShareCopied(false), 3000);
+      });
     } catch(e) { console.error(e); }
   };
 
@@ -781,7 +763,78 @@ export default function StarPathC() {
     const P = profile;
     const zh = lang === "zh";
     const studentName = name || (zh ? "学生" : "Student");
-    const docTitle = `${studentName}-${zh?"升学画像":"College Profile"}`;
+    const docTitle = `${studentName}-StarPath-Report`;
+
+    // Build SVG radar chart
+    const radarData = P.radar ? [
+      { label: zh?"学术好奇心":"Academic Curiosity", val: P.radar.academicCuriosity||0 },
+      { label: zh?"分析能力":"Analytical Strength",  val: P.radar.analyticalStrength||0 },
+      { label: zh?"创造力":"Creativity",             val: P.radar.creativity||0 },
+      { label: zh?"社会影响力":"Social Impact",       val: P.radar.socialImpactDrive||0 },
+      { label: zh?"领导力":"Leadership",             val: P.radar.leadership||0 },
+    ] : [];
+
+    const buildRadarSVG = (items) => {
+      const cx=180, cy=160, r=110, n=items.length;
+      const angle = (i) => (Math.PI*2*i/n) - Math.PI/2;
+      const pt = (i, scale) => [
+        cx + Math.cos(angle(i)) * r * scale,
+        cy + Math.sin(angle(i)) * r * scale
+      ];
+      // Grid rings
+      const rings = [0.25,0.5,0.75,1].map(s =>
+        items.map((_,i)=>pt(i,s)).map((p,i)=>`${i===0?'M':'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ')+'Z'
+      );
+      // Data polygon
+      const poly = items.map((d,i)=>pt(i,d.val/100)).map((p,i)=>`${i===0?'M':'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ')+'Z';
+      // Axis lines
+      const axes = items.map((_,i) => {
+        const [x,y] = pt(i,1);
+        return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(26,58,42,0.12)" stroke-width="1"/>`;
+      });
+      // Dots
+      const dots = items.map((d,i) => {
+        const [x,y] = pt(i,d.val/100);
+        return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="#6AAF3D" stroke="white" stroke-width="2"/>`;
+      });
+      // Labels
+      const labels = items.map((d,i) => {
+        const [x,y] = pt(i,1.22);
+        const anchor = x < cx-5 ? 'end' : x > cx+5 ? 'start' : 'middle';
+        return `<text x="${x.toFixed(1)}" y="${(y-8).toFixed(1)}" text-anchor="${anchor}" font-size="10" font-weight="700" fill="rgba(26,58,42,0.5)" font-family="sans-serif">${d.label}</text>
+                <text x="${x.toFixed(1)}" y="${(y+6).toFixed(1)}" text-anchor="${anchor}" font-size="11" font-weight="800" fill="#6AAF3D" font-family="sans-serif">${d.val}</text>`;
+      });
+      return `<svg width="360" height="320" viewBox="0 0 360 320" xmlns="http://www.w3.org/2000/svg">
+        <defs><radialGradient id="rg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#6AAF3D" stop-opacity="0.2"/><stop offset="100%" stop-color="#6AAF3D" stop-opacity="0.03"/></radialGradient></defs>
+        ${rings.map(d=>`<path d="${d}" fill="none" stroke="rgba(26,58,42,0.08)" stroke-width="1"/>`).join('')}
+        ${axes.join('')}
+        <path d="${poly}" fill="url(#rg)" stroke="#6AAF3D" stroke-width="2"/>
+        ${dots.join('')}
+        ${labels.join('')}
+      </svg>`;
+    };
+
+    // Build bar chart SVG for majors
+    const buildBarSVG = (majors) => {
+      const w=340, barH=22, gap=10, padL=140, padR=60;
+      const totalH = majors.length * (barH+gap) + 20;
+      const bars = majors.map((m,i) => {
+        const y = 10 + i*(barH+gap);
+        const barW = ((w-padL-padR) * m.fit/100);
+        const clr = m.fit>=85 ? '#6AAF3D' : m.fit>=75 ? '#82C455' : '#A3C97A';
+        return `
+          <text x="${padL-8}" y="${y+barH*0.7}" text-anchor="end" font-size="11" font-weight="700" fill="#1A3A2A" font-family="sans-serif">${m.name}</text>
+          <rect x="${padL}" y="${y}" width="${w-padL-padR}" height="${barH}" rx="4" fill="rgba(26,58,42,0.06)"/>
+          <rect x="${padL}" y="${y}" width="${barW.toFixed(1)}" height="${barH}" rx="4" fill="${clr}"/>
+          <text x="${padL+barW+6}" y="${y+barH*0.7}" font-size="11" font-weight="800" fill="${clr}" font-family="sans-serif">${m.fit}%</text>
+        `;
+      });
+      return `<svg width="${w}" height="${totalH}" viewBox="0 0 ${w} ${totalH}" xmlns="http://www.w3.org/2000/svg">${bars.join('')}</svg>`;
+    };
+
+    const strengths = (P.snap?.strengths||[]).map(s => typeof s === 'object' ? s : {name:s,desc:''});
+    const radarSVG = buildRadarSVG(radarData);
+    const barSVG = buildBarSVG(P.majors||[]);
 
     const html = `<!DOCTYPE html>
 <html lang="${zh?"zh":"en"}">
@@ -789,45 +842,80 @@ export default function StarPathC() {
 <meta charset="UTF-8"/>
 <title>${docTitle}</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=DM+Serif+Display&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Playfair+Display:ital@0;1&display=swap');
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'DM Sans',sans-serif;background:#fff;color:#1E2B1E;padding:0;}
-  @page{margin:16mm;size:A4;}
-  .page{max-width:100%;padding:0;}
-  .header{background:#1A3A2A;color:#fff;padding:28px 32px;display:flex;align-items:center;gap:16px;}
-  .logo{width:40px;height:40px;}
-  .brand{font-size:13px;font-weight:800;letter-spacing:2px;}
-  .byline{font-size:9px;opacity:.5;letter-spacing:2px;margin-top:2px;}
-  .hero{padding:28px 32px 20px;border-bottom:2px solid #EAF2E5;}
-  .student-name{font-size:11px;color:#6AAF3D;font-weight:700;letter-spacing:1px;margin-bottom:6px;}
-  .personality{font-family:'DM Serif Display',serif;font-size:28px;color:#1A3A2A;margin-bottom:6px;}
-  .tagline{font-size:13px;color:#6B7B6B;font-style:italic;margin-bottom:12px;}
-  .pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
-  .pill{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(106,175,61,.1);border:1px solid rgba(106,175,61,.25);color:#2D5A3D;}
-  .motivation{font-size:11px;color:#6B7B6B;line-height:1.7;}
-  .section{padding:20px 32px;border-bottom:1px solid #EAF2E5;break-inside:avoid;}
-  .sec-label{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:#6AAF3D;font-weight:800;margin-bottom:10px;}
-  .body-text{font-size:12px;line-height:1.85;color:#1E2B1E;}
-  .highlight{background:#F5F9F3;border-left:3px solid #6AAF3D;padding:10px 14px;border-radius:0 8px 8px 0;margin-top:8px;font-size:12px;line-height:1.8;}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
+  @page{margin:14mm 16mm;size:A4;}
+  .page{max-width:100%;}
+
+  /* Header */
+  .header{background:#1A3A2A;padding:20px 28px;display:flex;align-items:center;gap:14px;}
+  .logo{width:36px;height:36px;flex-shrink:0;}
+  .brand{font-size:14px;font-weight:800;letter-spacing:3px;color:#fff;}
+  .header-right{margin-left:auto;text-align:right;}
+  .report-date{font-size:9px;color:rgba(255,255,255,.4);letter-spacing:1px;}
+
+  /* Hero */
+  .hero{padding:24px 28px 20px;background:linear-gradient(180deg,rgba(106,175,61,.06) 0%,#fff 100%);border-bottom:2px solid #EAF2E5;}
+  .archetype-badge{display:inline-block;padding:3px 12px;border-radius:20px;background:rgba(106,175,61,.12);border:1px solid rgba(106,175,61,.3);font-size:9px;font-weight:800;color:#2D5A3D;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
+  .student-meta{font-size:10px;color:#6AAF3D;font-weight:700;letter-spacing:1px;margin-bottom:6px;}
+  .personality{font-family:'Playfair Display',serif;font-size:26px;color:#1A3A2A;margin-bottom:6px;line-height:1.2;}
+  .tagline{font-size:12px;color:#6B7B6B;line-height:1.8;margin-bottom:10px;}
+  .pills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;}
+  .pill{padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;background:rgba(106,175,61,.1);border:1px solid rgba(106,175,61,.25);color:#2D5A3D;}
+  .motivation{font-size:10px;color:#6B7B6B;line-height:1.7;font-style:italic;}
+
+  /* Sections */
+  .section{padding:18px 28px;border-bottom:1px solid #EAF2E5;break-inside:avoid;}
+  .section-2col{padding:18px 28px;border-bottom:1px solid #EAF2E5;display:grid;grid-template-columns:1fr 1fr;gap:20px;break-inside:avoid;}
+  .sec-label{font-size:7px;letter-spacing:3px;text-transform:uppercase;color:#6AAF3D;font-weight:800;margin-bottom:10px;}
+  .body-text{font-size:11px;line-height:1.85;color:#1E2B1E;}
+  .highlight{background:#F5F9F3;border-left:3px solid #6AAF3D;padding:10px 14px;margin-top:10px;font-size:11px;line-height:1.8;color:#1E2B1E;}
   .card{background:#F5F9F3;border-radius:8px;padding:12px 14px;}
-  .card-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#6B7B6B;font-weight:700;margin-bottom:6px;}
-  .major-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(26,58,42,.06);}
-  .major-name{font-size:12px;font-weight:700;flex:1;}
-  .bar{height:4px;width:80px;background:rgba(26,58,42,.08);border-radius:2px;overflow:hidden;}
-  .bar-fill{height:100%;background:#6AAF3D;border-radius:2px;}
-  .pct{font-size:11px;font-weight:800;color:#6AAF3D;min-width:28px;text-align:right;}
-  .arrow-item{display:flex;gap:8px;margin-bottom:6px;align-items:flex-start;font-size:12px;line-height:1.7;}
-  .arrow{color:#6AAF3D;font-weight:900;flex-shrink:0;}
-  .footer{padding:16px 32px;background:#F5F9F3;text-align:center;font-size:9px;color:#6B7B6B;letter-spacing:1px;}
-  .radar-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;}
-  .radar-item{background:#fff;border:1px solid rgba(106,175,61,.2);border-radius:8px;padding:8px 12px;text-align:center;}
-  .radar-val{font-size:20px;font-weight:800;color:#6AAF3D;line-height:1;}
-  .radar-lbl{font-size:9px;color:#6B7B6B;margin-top:3px;}
+  .card-label{font-size:7px;letter-spacing:2px;text-transform:uppercase;color:#6B7B6B;font-weight:700;margin-bottom:5px;}
+
+  /* Strengths */
+  .strength-item{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid rgba(26,58,42,.05);align-items:flex-start;}
+  .strength-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;font-weight:900;}
+  .strength-name{font-size:11px;font-weight:800;color:#1A3A2A;margin-bottom:2px;}
+  .strength-desc{font-size:10px;color:#6B7B6B;line-height:1.6;}
+
+  /* Activity */
+  .activity-item{padding:8px 12px;background:#F5F9F3;border-radius:7px;margin-bottom:7px;}
+  .activity-type{font-size:8px;font-weight:800;color:#D97706;letter-spacing:1px;margin-bottom:3px;}
+  .activity-action{font-size:11px;font-weight:700;color:#1A3A2A;margin-bottom:2px;}
+  .activity-when{font-size:10px;color:#6B7B6B;}
+
+  /* Actions */
+  .arrow-item{display:flex;gap:8px;margin-bottom:7px;align-items:flex-start;}
+  .arrow{color:#6AAF3D;font-weight:900;flex-shrink:0;font-size:12px;}
+
+  /* Footer */
+  .footer{padding:14px 28px;background:#F5F9F3;display:flex;align-items:center;justify-content:space-between;}
+  .footer-brand{font-size:10px;font-weight:800;color:#1A3A2A;letter-spacing:2px;}
+  .footer-date{font-size:9px;color:#6B7B6B;}
+  .footer-page{font-size:9px;color:#6B7B6B;}
+
+  /* Growth direction */
+  .direction-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px;}
+  .direction-item{padding:8px 12px;border-radius:8px;background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.15);font-size:11px;font-weight:700;color:#1A3A2A;display:flex;align-items:center;gap:7px;}
+  .direction-dot{color:#3B82F6;font-size:13px;}
+
+  /* Key priority box */
+  .key-box{background:rgba(106,175,61,.07);border:1px solid rgba(106,175,61,.2);border-radius:8px;padding:12px 14px;margin-top:12px;}
+  .key-label{font-size:7px;font-weight:800;color:#6AAF3D;letter-spacing:2px;margin-bottom:5px;}
+  .key-text{font-size:12px;font-weight:700;color:#1A3A2A;line-height:1.7;}
+
+  /* Counselor section */
+  .counselor-box{background:#1A3A2A;border-radius:10px;padding:16px 18px;}
+  .counselor-label{font-size:7px;font-weight:800;color:#82C455;letter-spacing:2px;margin-bottom:7px;}
+  .counselor-text{font-size:11px;color:rgba(255,255,255,.8);line-height:1.8;}
 </style>
 </head>
 <body>
 <div class="page">
+
+  <!-- HEADER -->
   <div class="header">
     <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
       <circle cx="50" cy="50" r="50" fill="#6AAF3D"/>
@@ -836,112 +924,100 @@ export default function StarPathC() {
       <rect x="80" y="35" width="3.5" height="22" rx="1.5" fill="white"/>
       <polygon points="81.5,60 84,66 90,66 85,70 87,76 81.5,72 76,76 78,70 73,66 79,66" fill="white"/>
     </svg>
-    <div>
-      <div class="brand">STARPATH AI</div>
-      <div class="byline">BY STARWISE INTERNATIONAL EDUCATION</div>
+    <div class="brand">STARPATH FINDER</div>
+    <div class="header-right">
+      <div class="report-date">${zh?"星途成长报告":"Growth Profile Report"} · ${new Date().toLocaleDateString(zh?'zh-CN':'en-US')}</div>
     </div>
   </div>
 
+  <!-- HERO -->
   <div class="hero">
-    ${name ? `<div class="student-name">${name} · ${zh?"升学画像报告":"College Profile Report"}</div>` : ''}
+    ${P.snap?.archetype ? `<div class="archetype-badge">${P.snap.archetype}</div>` : ''}
+    ${name ? `<div class="student-meta">${name} · ${t.grade(P.snap?.grade||'')} · ${t.school(P.snap?.schoolType||'')}</div>` : ''}
     <div class="personality">${P.snap?.personality||''}</div>
     <div class="tagline">${P.snap?.tagline||''}</div>
-    <div class="pills">
-      ${(P.snap?.strengths||[]).map(s=>`<span class="pill">⚡ ${s}</span>`).join('')}
-    </div>
     <div class="motivation">${P.snap?.motivation||''}</div>
   </div>
 
-  ${P.radar ? `
-  <div class="section">
-    <div class="sec-label">${zh?"能力画像":"Capability Profile"}</div>
-    <div class="radar-grid">
-      ${[
-        [P.radar.academicDepth, zh?"学术深度":"Academic Depth"],
-        [P.radar.creativity,    zh?"创造力":"Creativity"],
-        [P.radar.leadership,    zh?"领导力":"Leadership"],
-        [P.radar.execution,     zh?"执行力":"Execution"],
-        [P.radar.communication, zh?"表达力":"Communication"],
-        [P.radar.empathy,       zh?"同理心":"Empathy"],
-      ].map(([v,l])=>`<div class="radar-item"><div class="radar-val">${v}</div><div class="radar-lbl">${l}</div></div>`).join('')}
+  <!-- SECTION 1: RADAR + STRENGTHS (2 col) -->
+  <div class="section-2col">
+    <div>
+      <div class="sec-label">${zh?"五维能力画像":"Capability Profile"}</div>
+      ${radarSVG}
     </div>
-  </div>` : ''}
+    <div>
+      <div class="sec-label">${zh?"三大核心优势":"Core Strengths"}</div>
+      ${strengths.map((s,i) => `
+        <div class="strength-item">
+          <div class="strength-icon" style="background:${['rgba(106,175,61,.12)','rgba(59,130,246,.12)','rgba(212,119,6,.12)'][i%3]};color:${['#6AAF3D','#3B82F6','#D97706'][i%3]};">${['✦','◈','◉'][i]}</div>
+          <div>
+            <div class="strength-name">${s.name||s}</div>
+            <div class="strength-desc">${s.desc||''}</div>
+          </div>
+        </div>`).join('')}
+      <div style="margin-top:14px;">
+        <div class="sec-label">${zh?"成长提示":"Growth Area"}</div>
+        <div style="font-size:11px;color:#6B7B6B;line-height:1.7;padding:10px 12px;background:rgba(212,119,6,.04);border-radius:8px;border:1px solid rgba(212,119,6,.12);">${P.summary?.watchOut||''}</div>
+      </div>
+    </div>
+  </div>
 
+  <!-- SECTION 2: KEY INSIGHT -->
   <div class="section">
     <div class="sec-label">${zh?"核心洞察":"Key Insight"}</div>
     <div class="body-text">${P.summary?.headline||''}</div>
     <div class="highlight">${P.summary?.keyInsight||''}</div>
   </div>
 
-  <div class="section">
-    <div class="sec-label">${zh?"专业方向匹配":"Major Matches"}</div>
-    ${(P.majors||[]).map(m=>`
-      <div class="major-row">
-        <span class="major-name">${m.name}</span>
-        <div class="bar"><div class="bar-fill" style="width:${m.fit}%"></div></div>
-        <span class="pct">${m.fit}%</span>
-      </div>`).join('')}
-  </div>
-
-  <div class="section">
-    <div class="sec-label">${zh?"近期行动计划":"Action Plan"}</div>
-    ${(P.next?.month||[]).map(s=>`<div class="arrow-item"><span class="arrow">→</span><span>${s}</span></div>`).join('')}
-    <div class="highlight"><strong>${P.next?.key||''}</strong></div>
-  </div>
-
-  <div class="section">
-    <div class="sec-label">${zh?"思维风格":"Thinking Style"}</div>
-    <div class="grid">
-      <div class="card">
-        <div class="card-label">${zh?"认知风格":"Style"}</div>
-        <div style="font-size:15px;font-weight:800;color:#6AAF3D;">${P.snap?.thinkingStyle||''}</div>
+  <!-- SECTION 3: ACADEMIC DIRECTIONS + MAJOR MATCHES (2 col) -->
+  <div class="section-2col">
+    <div>
+      <div class="sec-label">${zh?"潜在学术方向":"Academic Directions"}</div>
+      <div class="direction-grid">
+        ${(P.academic?.directions||P.academic?.domains||[]).map(d=>`
+          <div class="direction-item"><span class="direction-dot">◈</span>${d}</div>`).join('')}
       </div>
-      <div class="card">
-        <div class="card-label">${zh?"成长提示":"Growth Area"}</div>
-        <div style="font-size:11px;line-height:1.7;">${P.summary?.watchOut||''}</div>
-      </div>
+    </div>
+    <div>
+      <div class="sec-label">${zh?"专业方向匹配":"Major Matches"}</div>
+      ${barSVG}
     </div>
   </div>
 
+  <!-- SECTION 4: ACTION PLAN -->
   <div class="section">
-    <div class="sec-label">${zh?"活动现状评估":"Activity Assessment"}</div>
-    <div class="body-text">${P.ec?.assessment||''}</div>
-    ${P.ec?.narrative ? `<div class="highlight"><strong>${zh?"叙事主线":"Narrative"}:</strong> ${P.ec.narrative}</div>` : ''}
-    ${(P.ec?.activities||[]).length ? `
-    <div style="margin-top:12px;">
-      ${(P.ec.activities||[]).map(a=>`
-        <div style="margin-bottom:10px;padding:10px 12px;background:#F5F9F3;border-radius:8px;">
-          <div style="font-size:10px;font-weight:800;color:#D97706;letter-spacing:1px;margin-bottom:4px;">${a.type||''}</div>
-          <div style="font-size:12px;font-weight:700;color:#1A3A2A;margin-bottom:3px;">${a.action||''}</div>
-          <div style="font-size:11px;color:#6B7B6B;">${a.when||''}</div>
-        </div>`).join('')}
-    </div>` : ''}
+    <div class="sec-label">${zh?"近期行动计划":"Action Plan"}</div>
+    ${(P.next?.month||[]).map(s=>`<div class="arrow-item"><span class="arrow">→</span><span style="font-size:11px;line-height:1.7;color:#1E2B1E;">${s}</span></div>`).join('')}
+    ${P.next?.key ? `<div class="key-box"><div class="key-label">✦ ${zh?"最关键一步":"KEY PRIORITY"}</div><div class="key-text">${P.next.key}</div></div>` : ''}
   </div>
 
-  ${P.essay ? `
+  <!-- SECTION 5: COUNSELOR NOTE -->
   <div class="section">
-    <div class="sec-label">${zh?"文书方向":"Essay Strategy"}</div>
-    <div class="body-text">${P.essay.coreNarrative||''}</div>
-    ${(P.essay.ideas||[]).map(d=>`<div class="arrow-item"><span class="arrow">✦</span><span>${d}</span></div>`).join('')}
-    ${P.essay.angle ? `<div class="highlight"><strong>${zh?"独特角度":"Unique Angle"}:</strong> ${P.essay.angle}</div>` : ''}
-  </div>` : ''}
+    <div class="sec-label">${zh?"顾问专属备注":"Counselor Note"}</div>
+    <div class="counselor-box">
+      <div class="counselor-label">${zh?"学生画像摘要":"STUDENT PROFILE SUMMARY"}</div>
+      <div class="counselor-text">${P.summary?.counselorNote||''}</div>
+    </div>
+  </div>
 
+  <!-- FOOTER -->
   <div class="footer">
-    StarWise International · ${new Date().toLocaleDateString(zh?'zh-CN':'en-US')}
+    <div class="footer-brand">STARPATH FINDER</div>
+    <div class="footer-date">${new Date().toLocaleDateString(zh?'zh-CN':'en-US')}</div>
+    <div class="footer-page">Generated by StarWise International · +1 (626) 725-6474</div>
   </div>
+
 </div>
 <script>
   document.title = "${docTitle}";
-  window.onload = function() { window.print(); }
+  window.onload = function(){ window.print(); }
 </script>
 </body></html>`;
 
-    const blob = new Blob([html], {type: 'text/html'});
+    const blob = new Blob([html], {type:'text/html'});
     const url = URL.createObjectURL(blob);
     const win = window.open(url, '_blank');
-    if (win) {
-      win.onafterprint = () => { URL.revokeObjectURL(url); };
-    }
+    if (win) win.onafterprint = () => URL.revokeObjectURL(url);
     setTimeout(() => setDownloading(false), 500);
   };
 
@@ -986,6 +1062,7 @@ export default function StarPathC() {
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 4000,
+          temperature: 0.3,
           system: buildPrompt(newLang),
           messages: [{role:"user", content:"Student assessment responses:\n" + lines.join("\n")}],
         }),
@@ -1010,7 +1087,7 @@ export default function StarPathC() {
 
   // ── INTRO ──────────────────────────────────────────────────────────────────
   if (phase === "intro") return (
-    <div style={{minHeight:"100vh",background:G.cream,fontFamily:"'DM Sans',sans-serif",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 20px",position:"relative",overflow:"hidden"}}>
+    <div style={{minHeight:"100vh",background:G.cream,fontFamily:"'Nunito',sans-serif",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 20px",position:"relative",overflow:"hidden"}}>
       <style>{CSS}</style>
       <button className="lbtn" onClick={()=>setLang(l=>l==="zh"?"en":"zh")}>{t.lang}</button>
 
@@ -1026,7 +1103,7 @@ export default function StarPathC() {
       <p style={{fontSize:10,letterSpacing:4,color:G.green,fontWeight:800,marginBottom:3,textTransform:"uppercase"}}>{t.brand}</p>
       
 
-      <h1 style={{fontFamily:"'DM Serif Display',serif",fontSize:"clamp(28px,5.5vw,52px)",fontWeight:400,textAlign:"center",lineHeight:1.18,marginBottom:14,color:G.greenDk}}>
+      <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(28px,5.5vw,52px)",fontWeight:400,textAlign:"center",lineHeight:1.18,marginBottom:14,color:G.greenDk}}>
         {t.tagline}
       </h1>
       <p style={{fontSize:14,color:G.muted,maxWidth:360,textAlign:"center",lineHeight:2,marginBottom:36,whiteSpace:"pre-line"}}>{t.subtitle}</p>
@@ -1051,8 +1128,16 @@ export default function StarPathC() {
   // ── QUIZ ───────────────────────────────────────────────────────────────────
   if (phase === "quiz" && cq) {
     const progress = (qi / TOTAL) * 100;
+    const handleTouchStart = (e) => { window._touchStartX = e.touches[0].clientX; };
+    const handleTouchEnd = (e) => {
+      const dx = e.changedTouches[0].clientX - (window._touchStartX||0);
+      if (Math.abs(dx) < 50) return;
+      if (dx < 0 && ok()) { next(); }
+      else if (dx > 0 && qi > 0) { setAnimK(k=>k+1); setQi(qi-1); }
+    };
     return (
-      <div style={{minHeight:"100vh",background:G.cream,fontFamily:"'DM Sans',sans-serif",display:"flex",flexDirection:"column"}}>
+      <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}
+        style={{minHeight:"100vh",background:G.cream,fontFamily:"'Nunito',sans-serif",display:"flex",flexDirection:"column"}}>
         <style>{CSS}</style>
         <button className="lbtn" onClick={()=>{setLang(l=>l==="zh"?"en":"zh");resetAll();}}>{t.lang}</button>
 
@@ -1152,7 +1237,7 @@ export default function StarPathC() {
                   ))}
                 </div>
                 <div style={{textAlign:"center",marginTop:12}}>
-                  <span style={{fontFamily:"'DM Serif Display',serif",fontSize:56,color:secColor,lineHeight:1}}>{ans[cq.id]||5}</span>
+                  <span style={{fontFamily:"'Playfair Display',serif",fontSize:56,color:secColor,lineHeight:1}}>{ans[cq.id]||5}</span>
                   <span style={{fontSize:14,opacity:.25,marginLeft:4}}>/10</span>
                 </div>
               </div>
@@ -1202,8 +1287,8 @@ export default function StarPathC() {
         ))}
         <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",color:G.green,fontSize:22}}>✦</div>
       </div>
-      <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:15,fontWeight:700,color:G.greenDk}}>{t.loading[loadI]}{dots}</div>
-      <div style={{fontSize:9,opacity:.22,letterSpacing:3,fontWeight:800,fontFamily:"'DM Sans',sans-serif"}}>STARPATH AI</div>
+      <div style={{fontFamily:"'Nunito',sans-serif",fontSize:15,fontWeight:700,color:G.greenDk}}>{t.loading[loadI]}{dots}</div>
+      <div style={{fontSize:9,opacity:.22,letterSpacing:3,fontWeight:800,fontFamily:"'Nunito',sans-serif"}}>STARPATH AI</div>
     </div>
   );
 
@@ -1216,7 +1301,7 @@ export default function StarPathC() {
       setTimeout(()=>setConf([]),4000);
     }
     return (
-      <div style={{minHeight:"100vh",background:G.cream,fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px 20px",position:"relative",overflow:"hidden"}}>
+      <div style={{minHeight:"100vh",background:G.cream,fontFamily:"'Nunito',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px 20px",position:"relative",overflow:"hidden"}}>
         <style>{CSS}</style>
         {conf.map(c=>(
           <div key={c.id} style={{position:"fixed",left:`${c.x}%`,top:-10,width:c.sz,height:c.sz,background:c.color,borderRadius:2,animation:`confDrop ${c.dur}s ${c.del}s ease-in both`,zIndex:300,pointerEvents:"none"}}/>
@@ -1233,7 +1318,7 @@ export default function StarPathC() {
           </div>
 
           <div style={{fontSize:32,marginBottom:10}}>🎉</div>
-          <h2 style={{fontFamily:"'DM Serif Display',serif",fontSize:24,fontWeight:400,color:G.greenDk,marginBottom:8,lineHeight:1.25}}>{t.gateTitle}</h2>
+          <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:400,color:G.greenDk,marginBottom:8,lineHeight:1.25}}>{t.gateTitle}</h2>
           <p style={{fontSize:13,color:G.muted,lineHeight:1.85,marginBottom:26}}>{t.gateDesc}</p>
 
           <input className="ifield" type="text" value={name} onChange={e=>setName(e.target.value)}
@@ -1248,7 +1333,7 @@ export default function StarPathC() {
             {t.gateBtn}
           </button>
           <button onClick={submitGate}
-            style={{width:"100%",background:"transparent",border:"none",padding:"8px",fontSize:12,color:G.muted,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600}}>
+            style={{width:"100%",background:"transparent",border:"none",padding:"8px",fontSize:12,color:G.muted,cursor:"pointer",fontFamily:"'Nunito',sans-serif",fontWeight:600}}>
             {t.gateSkip}
           </button>
           <p style={{fontSize:10,color:G.muted,opacity:.45,textAlign:"center",marginTop:12,lineHeight:1.7}}>{t.gateNote}</p>
@@ -1259,17 +1344,17 @@ export default function StarPathC() {
 
   // ── ERROR ───────────────────────────────────────────────────────────────────
   if (phase === "error") return (
-    <div style={{minHeight:"100vh",background:G.cream,fontFamily:"'DM Sans',sans-serif",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:40,textAlign:"center"}}>
+    <div style={{minHeight:"100vh",background:G.cream,fontFamily:"'Nunito',sans-serif",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:40,textAlign:"center"}}>
       <style>{CSS}</style>
       <div style={{fontSize:48,marginBottom:16}}>😵</div>
-      <h2 style={{fontFamily:"'DM Serif Display',serif",fontSize:22,fontWeight:400,color:G.greenDk,marginBottom:8}}>{t.errTitle}</h2>
+      <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:400,color:G.greenDk,marginBottom:8}}>{t.errTitle}</h2>
       <p style={{fontSize:13,color:G.muted,marginBottom:28,lineHeight:1.85,maxWidth:300}}>{t.errDesc}</p>
       <button className="gbtn" onClick={generate}
         style={{background:G.green,color:"#fff",padding:"12px 32px",fontSize:14,marginBottom:12}}>
         {t.retry}
       </button>
       <button onClick={()=>{setPhase("quiz");setQi(TOTAL-1);}}
-        style={{background:"transparent",border:"none",color:G.muted,fontSize:12,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600}}>
+        style={{background:"transparent",border:"none",color:G.muted,fontSize:12,cursor:"pointer",fontFamily:"'Nunito',sans-serif",fontWeight:600}}>
         {t.backQ}
       </button>
     </div>
@@ -1299,9 +1384,9 @@ export default function StarPathC() {
     );
 
     return (
-      <div style={{minHeight:"100vh",background:G.cream,fontFamily:"'DM Sans',sans-serif",color:G.text}}>
+      <div style={{minHeight:"100vh",background:G.cream,fontFamily:"'Nunito',sans-serif",color:G.text}}>
         <style>{CSS}</style>
-        <button className="lbtn" onClick={switchLang} style={{right:16,top:16,background:"rgba(26,58,42,.06)",border:"1px solid rgba(26,58,42,.12)",color:"rgba(26,58,42,.5)",padding:"6px 14px",borderRadius:20,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",letterSpacing:.3,position:"fixed",zIndex:200,transition:"all .2s",whiteSpace:"nowrap"}} title={t.switchLang}>{switching?t.switching:t.lang}</button>
+        <button className="lbtn" onClick={switchLang} style={{right:16,top:16,background:"rgba(26,58,42,.06)",border:"1px solid rgba(26,58,42,.12)",color:"rgba(26,58,42,.5)",padding:"6px 14px",borderRadius:20,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'Nunito',sans-serif",letterSpacing:.3,position:"fixed",zIndex:200,transition:"all .2s",whiteSpace:"nowrap"}} title={t.switchLang}>{switching?t.switching:t.lang}</button>
         {conf.map(c=>(
           <div key={c.id} style={{position:"fixed",left:`${c.x}%`,top:-10,width:c.sz,height:c.sz,background:c.color,borderRadius:2,animation:`confDrop ${c.dur}s ${c.del}s ease-in both`,zIndex:300,pointerEvents:"none"}}/>
         ))}
@@ -1327,7 +1412,7 @@ export default function StarPathC() {
                 {P.snap.archetype}
               </div>
             )}
-            <h1 style={{fontFamily:"'DM Serif Display',serif",fontSize:"clamp(26px,5vw,44px)",fontWeight:400,lineHeight:1.18,color:G.greenDk,marginBottom:12}}>
+            <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(26px,5vw,44px)",fontWeight:400,lineHeight:1.18,color:G.greenDk,marginBottom:12}}>
               {P.snap?.personality}
             </h1>
             <p style={{fontSize:14,color:G.muted,lineHeight:1.9,maxWidth:500,margin:"0 auto 18px"}}>{P.snap?.tagline}</p>
@@ -1400,8 +1485,8 @@ export default function StarPathC() {
                           const val = data.find(d=>d.subject===payload.value)?.value;
                           return (
                             <g>
-                              <text x={nx} y={ny-7} textAnchor="middle" dominantBaseline="middle" style={{fontSize:10,fontWeight:700,fill:"rgba(26,58,42,.5)",fontFamily:"'DM Sans',sans-serif"}}>{payload.value}</text>
-                              <text x={nx} y={ny+8} textAnchor="middle" dominantBaseline="middle" style={{fontSize:11,fontWeight:800,fill:G.green,fontFamily:"'DM Sans',sans-serif"}}>{val}</text>
+                              <text x={nx} y={ny-7} textAnchor="middle" dominantBaseline="middle" style={{fontSize:10,fontWeight:700,fill:"rgba(26,58,42,.5)",fontFamily:"'Nunito',sans-serif"}}>{payload.value}</text>
+                              <text x={nx} y={ny+8} textAnchor="middle" dominantBaseline="middle" style={{fontSize:11,fontWeight:800,fill:G.green,fontFamily:"'Nunito',sans-serif"}}>{val}</text>
                             </g>
                           );
                         }}/>
@@ -1454,7 +1539,7 @@ export default function StarPathC() {
 
               {/* CTA */}
               <div className="card" style={{background:G.greenDk,border:"none",textAlign:"center",padding:"32px 24px"}}>
-                <h3 style={{fontFamily:"'DM Serif Display',serif",fontSize:22,fontWeight:400,color:"#fff",marginBottom:10}}>{t.lCtaTitle}</h3>
+                <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:400,color:"#fff",marginBottom:10}}>{t.lCtaTitle}</h3>
                 <p style={{fontSize:13,color:"rgba(255,255,255,.55)",lineHeight:1.85,marginBottom:20,maxWidth:340,margin:"0 auto 20px"}}>{t.lCtaDesc}</p>
                 <button className="gbtn" onClick={()=>setTab("send")}
                   style={{background:G.green,color:"#fff",padding:"13px 30px",fontSize:14,boxShadow:`0 6px 20px ${G.green}55`}}>
@@ -1575,7 +1660,7 @@ export default function StarPathC() {
 
               {/* CTA */}
               <div className="card" style={{background:G.greenDk,border:"none",textAlign:"center",padding:"32px 24px"}}>
-                <h3 style={{fontFamily:"'DM Serif Display',serif",fontSize:22,fontWeight:400,color:"#fff",marginBottom:10}}>{t.lCtaTitle}</h3>
+                <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:400,color:"#fff",marginBottom:10}}>{t.lCtaTitle}</h3>
                 <p style={{fontSize:13,color:"rgba(255,255,255,.55)",lineHeight:1.85,marginBottom:20,maxWidth:340,margin:"0 auto 20px"}}>{t.lCtaDesc}</p>
                 <button className="gbtn" onClick={()=>setTab("send")}
                   style={{background:G.green,color:"#fff",padding:"13px 30px",fontSize:14,boxShadow:`0 6px 20px ${G.green}55`}}>
@@ -1632,7 +1717,7 @@ export default function StarPathC() {
                         {mode:"own",     icon:"📧",title:t.optOwn,      sub:t.optOwnSub,      color:G.sage},
                       ].map(opt=>(
                         <button key={opt.mode} onClick={()=>setSendMode(opt.mode)}
-                          style={{padding:"20px 16px",borderRadius:14,background:"#fff",border:`2px solid rgba(26,58,42,.09)`,cursor:"pointer",textAlign:"left",fontFamily:"'DM Sans',sans-serif",transition:"all .2s"}}
+                          style={{padding:"20px 16px",borderRadius:14,background:"#fff",border:`2px solid rgba(26,58,42,.09)`,cursor:"pointer",textAlign:"left",fontFamily:"'Nunito',sans-serif",transition:"all .2s"}}
                           onMouseEnter={e=>e.currentTarget.style.borderColor=opt.color}
                           onMouseLeave={e=>e.currentTarget.style.borderColor="rgba(26,58,42,.09)"}>
                           <div style={{fontSize:24,marginBottom:10}}>{opt.icon}</div>
@@ -1658,7 +1743,7 @@ export default function StarPathC() {
                         style={{width:"100%",padding:"13px",fontSize:14,background:G.green,color:"#fff",boxShadow:`0 6px 22px ${G.green}30`,marginBottom:10}}>
                         {sending ? t.sending : t.sendBtn}
                       </button>
-                      <button onClick={()=>setSendMode(null)} style={{width:"100%",background:"transparent",border:"none",fontSize:12,color:G.muted,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600,padding:"6px"}}>{t.back}</button>
+                      <button onClick={()=>setSendMode(null)} style={{width:"100%",background:"transparent",border:"none",fontSize:12,color:G.muted,cursor:"pointer",fontFamily:"'Nunito',sans-serif",fontWeight:600,padding:"6px"}}>{t.back}</button>
                     </div>
                   )}
 
@@ -1677,7 +1762,7 @@ export default function StarPathC() {
                         style={{width:"100%",padding:"13px",fontSize:14,background:G.sage,color:"#fff",marginBottom:10}}>
                         {sending ? t.sending : t.sendBtn}
                       </button>
-                      <button onClick={()=>setSendMode(null)} style={{width:"100%",background:"transparent",border:"none",fontSize:12,color:G.muted,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600,padding:"6px"}}>{t.back}</button>
+                      <button onClick={()=>setSendMode(null)} style={{width:"100%",background:"transparent",border:"none",fontSize:12,color:G.muted,cursor:"pointer",fontFamily:"'Nunito',sans-serif",fontWeight:600,padding:"6px"}}>{t.back}</button>
                     </div>
                   )}
 
@@ -1692,11 +1777,13 @@ export default function StarPathC() {
                         <p style={{fontSize:12,color:G.muted,lineHeight:1.75,marginBottom:10}}>{t.inviteDesc}</p>
                         <button onClick={()=>{
                           const baseUrl = window.location.href.split('#')[0];
-                          navigator.clipboard.writeText(baseUrl).then(()=>{
+                          const zh2 = lang==='zh';
+                          const inviteMsg = zh2 ? `快来试试这个免费的星途潜能测试！15分钟发现你的成长方向 🌟\n${baseUrl}` : `Try this free StarPath Finder assessment! 15 min to discover your direction 🌟\n${baseUrl}`;
+                          navigator.clipboard.writeText(inviteMsg).then(()=>{
                             setShareCopied(true); setTimeout(()=>setShareCopied(false),3000);
                           });
                         }}
-                          style={{width:"100%",padding:"11px 16px",borderRadius:10,background:`${G.green}10`,border:`1.5px solid ${G.green}30`,fontSize:13,fontWeight:700,color:G.green,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:16,transition:"all .2s"}}>
+                          style={{width:"100%",padding:"11px 16px",borderRadius:10,background:`${G.green}10`,border:`1.5px solid ${G.green}30`,fontSize:13,fontWeight:700,color:G.green,cursor:"pointer",fontFamily:"'Nunito',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:16,transition:"all .2s"}}>
                           🌟 {t.inviteBtn} {shareCopied?"✓":"→"}
                         </button>
                       </div>
@@ -1705,25 +1792,25 @@ export default function StarPathC() {
                       <div style={{marginBottom:14}}>
                         <p style={{fontSize:12,color:G.muted,lineHeight:1.75,marginBottom:10}}>{t.shareDesc}</p>
                         <button onClick={shareReport}
-                          style={{width:"100%",padding:"11px 16px",borderRadius:10,background:shareCopied?`${G.green}08`:"rgba(26,58,42,.04)",border:`1.5px solid ${shareCopied?G.green+"50":"rgba(26,58,42,.1)"}`,fontSize:13,fontWeight:700,color:shareCopied?G.green:G.greenDk,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                          {shareCopied ? <>✓ {t.shareCopied}</> : <>🔗 {t.shareLink}</>}
+                          style={{width:"100%",padding:"11px 16px",borderRadius:10,background:shareCopied?`${G.green}08`:"rgba(26,58,42,.04)",border:`1.5px solid ${shareCopied?G.green+"50":"rgba(26,58,42,.1)"}`,fontSize:13,fontWeight:700,color:shareCopied?G.green:G.greenDk,cursor:"pointer",fontFamily:"'Nunito',sans-serif",transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                          {shareCopied ? <>✓ {t.shareCopied}</> : shareLoading ? (zh?"生成中…":"Generating…") : <>🔗 {t.shareLink}</>}
                         </button>
                       </div>
 
                       {/* Download PDF */}
                       <button onClick={downloadPDF} disabled={downloading}
-                        style={{width:"100%",padding:"11px 16px",borderRadius:10,background:"rgba(26,58,42,.04)",border:"1.5px solid rgba(26,58,42,.1)",fontSize:13,fontWeight:700,color:G.greenDk,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:14,transition:"all .2s"}}>
+                        style={{width:"100%",padding:"11px 16px",borderRadius:10,background:"rgba(26,58,42,.04)",border:"1.5px solid rgba(26,58,42,.1)",fontSize:13,fontWeight:700,color:G.greenDk,cursor:"pointer",fontFamily:"'Nunito',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:14,transition:"all .2s"}}>
                         {downloading ? `⏳ ${t.downloading}` : `📄 ${t.downloadPdf}`}
                       </button>
 
                       {/* Copy text + Restart */}
                       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                         <button onClick={copyLink}
-                          style={{flex:1,padding:"9px 14px",borderRadius:9,background:copied?`${G.green}08`:"rgba(26,58,42,.04)",border:`1px solid ${copied?G.green+"40":"rgba(26,58,42,.09)"}`,fontSize:12,fontWeight:700,color:copied?G.green:G.muted,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",transition:"all .2s"}}>
+                          style={{flex:1,padding:"9px 14px",borderRadius:9,background:copied?`${G.green}08`:"rgba(26,58,42,.04)",border:`1px solid ${copied?G.green+"40":"rgba(26,58,42,.09)"}`,fontSize:12,fontWeight:700,color:copied?G.green:G.muted,cursor:"pointer",fontFamily:"'Nunito',sans-serif",transition:"all .2s"}}>
                           {copied ? t.copied : `📋 ${t.copyLink}`}
                         </button>
                         <button onClick={resetAll}
-                          style={{padding:"9px 14px",borderRadius:9,background:"rgba(26,58,42,.04)",border:"1px solid rgba(26,58,42,.09)",fontSize:12,fontWeight:700,color:G.muted,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
+                          style={{padding:"9px 14px",borderRadius:9,background:"rgba(26,58,42,.04)",border:"1px solid rgba(26,58,42,.09)",fontSize:12,fontWeight:700,color:G.muted,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>
                           🔄 {t.restart}
                         </button>
                       </div>
@@ -1735,21 +1822,21 @@ export default function StarPathC() {
                 <div className="card anim-pop" style={{padding:"32px 24px"}}>
                   <div style={{textAlign:"center",marginBottom:24}}>
                     <div style={{fontSize:44,marginBottom:12}}>📧</div>
-                    <h3 style={{fontFamily:"'DM Serif Display',serif",fontSize:22,fontWeight:400,color:G.greenDk,marginBottom:8}}>{t.sentTitle}</h3>
+                    <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:400,color:G.greenDk,marginBottom:8}}>{t.sentTitle}</h3>
                     <p style={{fontSize:13,color:G.muted,lineHeight:1.85,maxWidth:300,margin:"0 auto"}}>{t.sentDesc}</p>
                   </div>
                   <div style={{borderTop:"1px solid rgba(26,58,42,.07)",paddingTop:20}}>
                     <div className="sl">{zh?"同时分享给家长或好友":"ALSO SHARE WITH PARENTS OR FRIENDS"}</div>
                     <button onClick={shareReport}
-                      style={{width:"100%",padding:"11px 16px",borderRadius:10,background:shareCopied?`${G.green}08`:"rgba(26,58,42,.04)",border:`1.5px solid ${shareCopied?G.green+"50":"rgba(26,58,42,.1)"}`,fontSize:13,fontWeight:700,color:shareCopied?G.green:G.greenDk,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:10}}>
-                      {shareCopied ? <>✓ {t.shareCopied}</> : <>🔗 {t.shareLink}</>}
+                      style={{width:"100%",padding:"11px 16px",borderRadius:10,background:shareCopied?`${G.green}08`:"rgba(26,58,42,.04)",border:`1.5px solid ${shareCopied?G.green+"50":"rgba(26,58,42,.1)"}`,fontSize:13,fontWeight:700,color:shareCopied?G.green:G.greenDk,cursor:"pointer",fontFamily:"'Nunito',sans-serif",transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:10}}>
+                      {shareCopied ? <>✓ {t.shareCopied}</> : shareLoading ? (zh?"生成中…":"Generating…") : <>🔗 {t.shareLink}</>}
                     </button>
                     <button onClick={downloadPDF}
-                      style={{width:"100%",padding:"11px 16px",borderRadius:10,background:"rgba(26,58,42,.04)",border:"1.5px solid rgba(26,58,42,.1)",fontSize:13,fontWeight:700,color:G.greenDk,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:10}}>
+                      style={{width:"100%",padding:"11px 16px",borderRadius:10,background:"rgba(26,58,42,.04)",border:"1.5px solid rgba(26,58,42,.1)",fontSize:13,fontWeight:700,color:G.greenDk,cursor:"pointer",fontFamily:"'Nunito',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:10}}>
                       📄 {t.downloadPdf}
                     </button>
                     <button onClick={resetAll}
-                      style={{width:"100%",padding:"9px",borderRadius:9,background:"transparent",border:"none",fontSize:12,fontWeight:700,color:G.muted,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
+                      style={{width:"100%",padding:"9px",borderRadius:9,background:"transparent",border:"none",fontSize:12,fontWeight:700,color:G.muted,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>
                       🔄 {t.restart}
                     </button>
                   </div>
@@ -1767,6 +1854,11 @@ export default function StarPathC() {
               </button>
             </div>
           )}
+          {/* ── Page Footer ── */}
+          <div style={{textAlign:"center",marginTop:40,paddingTop:20,borderTop:"1px solid rgba(26,58,42,.05)"}}>
+            <p style={{fontSize:10,color:"rgba(26,58,42,.3)",fontWeight:700,letterSpacing:1}}>STARPATH FINDER · StarWise International</p>
+            <p style={{fontSize:10,color:"rgba(26,58,42,.25)",marginTop:3}}>+1 (626) 725-6474</p>
+          </div>
         </div>
       </div>
     );
@@ -1774,4 +1866,3 @@ export default function StarPathC() {
 
   return null;
 }
-  
