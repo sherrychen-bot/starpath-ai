@@ -44,7 +44,7 @@ const T = {
     // summary labels
     lInsight:"核心洞察", lGrowth:"成长提示", lStyle:"思维风格", lRadar:"能力画像",
     rAxes:["学术深度","创造力","领导力","执行力","表达力","同理心"],
-    lMajors:"专业方向匹配", lNextMonth:"本月行动", lNextKey:"申请前最关键",
+    lMajors:"专业方向匹配", lNextMonth:"近期行动计划", lNextKey:"申请前最关键",
     lCurriosity:"自然好奇心", lDomains:"强势学科域", lLearning:"学习风格",
     lMajorDetail:"专业方向详情", lCourses:"代表课程", lCareers:"职业方向",
     lCourseStrat:"选课策略", lApIb:"推荐 AP / IB",
@@ -60,13 +60,14 @@ const T = {
     optOwn:"发送给我已有的顾问", optOwnSub:"将报告发到顾问邮箱",
     yourInfo:"你的信息", counselorEmail:"顾问邮箱",
     note:"附言（可选）", notePH:"想跟顾问说的话…",
-    sendBtn:"用邮件发送 →", sending:"打开邮件中…",
-    sentTitle:"邮件已准备好 📧", sentDesc:"邮件客户端已打开，确认发送即可。报告内容已预填在正文中。",
+    sendBtn:"发送邮件 →", sending:"打开邮件中…",
+    sentTitle:"邮件已打开 📧", sentDesc:"邮件已在你的邮件客户端打开，报告内容已预填，确认发送即可。",
     copyLink:"复制报告内容", copied:"✓ 已复制到剪贴板",
     shareLink:"分享报告链接", shareCopied:"✓ 链接已复制",
     downloadPdf:"下载 PDF 报告", downloading:"准备中…",
     shareDesc:"把这个链接发给家长或好友，他们直接打开就能看到你的报告，无需登录。",
     restart:"重新测评", back:"← 返回",
+    inviteBtn:"邀请好友测评", inviteDesc:"把测评工具分享给朋友或同学",
     switchLang:"切换为英文版（重新生成）", switching:"正在切换…",
     grade: g=>`${g}年级`,
     school: s=>{const m={us_public:"美国公立高中",us_private:"美国私立高中",ib:"IB课程",ap:"AP课程",intl:"国际学校",boarding:"寄宿学校",other:"其他"};return Array.isArray(s)?s.map(v=>m[v]||v).join(" · "):(m[s]||s);},
@@ -91,7 +92,7 @@ const T = {
     t0:"📋 Summary", t1:"📚 Academics", t2:"🏆 Activities", t3:"🎓 Colleges", t4:"📤 Send",
     lInsight:"Key Insight", lGrowth:"Growth Area", lStyle:"Thinking Style", lRadar:"Capability Profile",
     rAxes:["Academic Depth","Creativity","Leadership","Execution","Communication","Empathy"],
-    lMajors:"Top Major Matches", lNextMonth:"This Month", lNextKey:"Before Applications",
+    lMajors:"Top Major Matches", lNextMonth:"Action Plan", lNextKey:"Before Applications",
     lCurriosity:"Natural Curiosity", lDomains:"Strongest Domains", lLearning:"Learning Style",
     lMajorDetail:"Major Matches Detail", lCourses:"Sample Courses", lCareers:"Career Paths",
     lCourseStrat:"Course Strategy", lApIb:"Recommended AP / IB",
@@ -106,13 +107,14 @@ const T = {
     optOwn:"Send to my own counselor", optOwnSub:"Email the report to your existing counselor",
     yourInfo:"Your info", counselorEmail:"Counselor's email",
     note:"Note (optional)", notePH:"Any message for the counselor…",
-    sendBtn:"Open in Email →", sending:"Opening…",
-    sentTitle:"Email Ready 📧", sentDesc:"Your email client has opened with the report pre-filled. Just hit send!",
+    sendBtn:"Send Email →", sending:"Opening…",
+    sentTitle:"Email Opened 📧", sentDesc:"Your email client opened with the report pre-filled. Hit send!",
     copyLink:"Copy Report Text", copied:"✓ Copied to clipboard",
     shareLink:"Share Report Link", shareCopied:"✓ Link copied!",
     downloadPdf:"Download PDF", downloading:"Preparing…",
     shareDesc:"Share this link with parents or friends — they can view your report without any account.",
     restart:"Start Over", back:"← Back",
+    inviteBtn:"Invite a Friend", inviteDesc:"Share the assessment tool with friends",
     switchLang:"Switch to Chinese (regenerate)", switching:"Switching…",
     grade: g=>`Grade ${g}`,
     school: s=>{const m={us_public:"US Public",us_private:"US Private",ib:"IB Track",ap:"AP Track",intl:"Intl School",boarding:"Boarding",other:"Other"};return Array.isArray(s)?s.map(v=>m[v]||v).join(" · "):(m[s]||s);},
@@ -445,21 +447,57 @@ export default function StarPathC() {
 
   // Load shared report from URL hash on mount
   useEffect(() => {
-    try {
+    (async () => { try {
       const hash = window.location.hash;
-      if (hash.startsWith('#report=')) {
-        const encoded = hash.slice(8);
-        const payload = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+      const isV2 = hash.startsWith('#v2=');
+      const isLegacy = hash.startsWith('#report=');
+      if (isV2 || isLegacy) {
+        const encoded = hash.slice(isV2 ? 4 : 8);
+        let payload;
+        try {
+          // Try gzip decompress first (v2 format)
+          if (isV2 && typeof DecompressionStream !== 'undefined') {
+            const binary = Uint8Array.from(atob(encoded), c => c.charCodeAt(0));
+            const stream = new DecompressionStream('gzip');
+            const writer = stream.writable.getWriter();
+            writer.write(binary); writer.close();
+            const text = await new Response(stream.readable).text();
+            const slim = JSON.parse(text);
+            payload = { s2: slim };
+          } else {
+            payload = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+          }
+        } catch(_) {
+          payload = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+        }
         if (payload.p) {
+          // Legacy full format
           setProfile(payload.p);
           if (payload.n) setName(payload.n);
           if (payload.e) setEmail(payload.e);
           if (payload.l) setLang(payload.l);
-          setPhase('result');
-          setTab('summary');
+          setPhase('result'); setTab('summary');
+        } else if (payload.s) {
+          setProfile({ snap:payload.s, radar:payload.r, summary:payload.su, majors:payload.m, next:payload.nx });
+          if (payload.n) setName(payload.n);
+          if (payload.l) setLang(payload.l);
+          setPhase('result'); setTab('summary');
+        } else if (payload.s2) {
+          // V2 ultra-compact format
+          const s = payload.s2;
+          setProfile({
+            snap:{ personality:s.a, tagline:s.b, strengths:s.c, motivation:s.d, thinkingStyle:s.e, grade:s.f, schoolType:s.g },
+            radar: s.h,
+            summary:{ headline:s.i, keyInsight:s.j, watchOut:s.k, counselorNote:s.l2 },
+            majors: (s.m||[]).map(([n,f])=>({name:n,fit:f})),
+            next:{ month:s.o, key:s.p2 }
+          });
+          if (s.q) setName(s.q);
+          if (s.r2) setLang(s.r2);
+          setPhase('result'); setTab('summary');
         }
       }
-    } catch(e) { /* invalid hash, ignore */ }
+    } catch(e) { /* invalid hash, ignore */ } })();
   }, []);
 
   // confetti on result
@@ -506,10 +544,9 @@ export default function StarPathC() {
       else lines.push(`A: ${a}`);
     }
     try {
-      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method:"POST",
-        headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
           model:"claude-sonnet-4-20250514",
           max_tokens:4000,
@@ -586,14 +623,19 @@ export default function StarPathC() {
     if (sendMode === "own" && !cEmail.includes("@")) return;
     setSending(true);
     const reportText = buildReportText(profile, t, lang);
-    const subject = encodeURIComponent(`StarPath AI Report — ${profile.snap?.personality}${name ? " · " + name : ""}`);
-    const body = encodeURIComponent(
-      (note ? note + "\n\n" : "") + reportText
+    const subject = encodeURIComponent(
+      `StarPath AI Report — ${profile.snap?.personality||""}${name ? " · " + name : ""}`
     );
+    const body = encodeURIComponent((note ? note + "\n\n" : "") + reportText);
     const to = sendMode === "own" ? encodeURIComponent(cEmail) : "";
-    const mailto = `mailto:${to}?subject=${subject}&body=${body}`;
-    window.open(mailto, "_blank");
-    setTimeout(() => { setSending(false); setSent(true); }, 400);
+    // Use anchor click — most reliable, avoids browser popup blocking
+    const a = document.createElement("a");
+    a.href = `mailto:${to}?subject=${subject}&body=${body}`;
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => { setSending(false); setSent(true); }, 300);
   };
 
   const copyLink = () => {
@@ -615,51 +657,225 @@ export default function StarPathC() {
     });
   };
 
-  const shareReport = () => {
+  const shareReport = async () => {
     if (!profile) return;
-    // Encode profile + meta into URL hash for shareable link
     try {
-      const payload = { p: profile, n: name, e: email, l: lang };
-      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-      const shareUrl = window.location.href.split('#')[0] + '#report=' + encoded;
-      navigator.clipboard.writeText(shareUrl).then(() => {
-        setShareCopied(true);
-        setTimeout(() => setShareCopied(false), 3000);
-      }).catch(() => {
-        const ta = document.createElement('textarea');
-        ta.value = shareUrl;
-        ta.style.position = 'fixed'; ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.select(); document.execCommand('copy');
-        document.body.removeChild(ta);
-        setShareCopied(true);
-        setTimeout(() => setShareCopied(false), 3000);
-      });
+      // Ultra-compact: only the fields needed to render summary view
+      const slim = {
+        a: profile.snap?.personality,
+        b: profile.snap?.tagline,
+        c: profile.snap?.strengths,
+        d: profile.snap?.motivation,
+        e: profile.snap?.thinkingStyle,
+        f: profile.snap?.grade,
+        g: profile.snap?.schoolType,
+        h: profile.radar,
+        i: profile.summary?.headline,
+        j: profile.summary?.keyInsight,
+        k: profile.summary?.watchOut,
+        l2: profile.summary?.counselorNote,
+        m: (profile.majors||[]).map(x=>[x.name,x.fit]),
+        o: profile.next?.month,
+        p2: profile.next?.key,
+        q: name, r2: lang
+      };
+      // Compress via gzip if available (modern browsers), fallback to btoa
+      let encoded;
+      if (typeof CompressionStream !== 'undefined') {
+        const json = JSON.stringify(slim);
+        const stream = new CompressionStream('gzip');
+        const writer = stream.writable.getWriter();
+        writer.write(new TextEncoder().encode(json));
+        writer.close();
+        const compressed = await new Response(stream.readable).arrayBuffer();
+        encoded = btoa(String.fromCharCode(...new Uint8Array(compressed)));
+      } else {
+        encoded = btoa(unescape(encodeURIComponent(JSON.stringify(slim))));
+      }
+      const shareUrl = window.location.href.split('#')[0] + '#v2=' + encoded;
+      const doWrite = (url) => {
+        navigator.clipboard.writeText(url).then(() => {
+          setShareCopied(true); setTimeout(() => setShareCopied(false), 3000);
+        }).catch(() => {
+          const ta = document.createElement('textarea');
+          ta.value = url; ta.style.position='fixed'; ta.style.opacity='0';
+          document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+          document.body.removeChild(ta);
+          setShareCopied(true); setTimeout(() => setShareCopied(false), 3000);
+        });
+      };
+      doWrite(shareUrl);
     } catch(e) { console.error(e); }
   };
 
   const downloadPDF = () => {
     if (!profile) return;
     setDownloading(true);
-    // Inject print styles then trigger browser print-to-PDF
-    const styleId = 'starpath-print-style';
-    if (!document.getElementById(styleId)) {
-      const s = document.createElement('style');
-      s.id = styleId;
-      s.textContent = `
-        @media print {
-          .lbtn, .tbtn, .gbtn, [data-noprint] { display: none !important; }
-          body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .card { break-inside: avoid; box-shadow: none !important; border: 1px solid #ddd !important; }
-          @page { margin: 16mm; size: A4; }
-        }
-      `;
-      document.head.appendChild(s);
+    const P = profile;
+    const zh = lang === "zh";
+    const studentName = name || (zh ? "学生" : "Student");
+    const docTitle = `${studentName}-${zh?"升学画像":"College Profile"}`;
+
+    const html = `<!DOCTYPE html>
+<html lang="${zh?"zh":"en"}">
+<head>
+<meta charset="UTF-8"/>
+<title>${docTitle}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=DM+Serif+Display&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:#fff;color:#1E2B1E;padding:0;}
+  @page{margin:16mm;size:A4;}
+  .page{max-width:100%;padding:0;}
+  .header{background:#1A3A2A;color:#fff;padding:28px 32px;display:flex;align-items:center;gap:16px;}
+  .logo{width:40px;height:40px;}
+  .brand{font-size:13px;font-weight:800;letter-spacing:2px;}
+  .byline{font-size:9px;opacity:.5;letter-spacing:2px;margin-top:2px;}
+  .hero{padding:28px 32px 20px;border-bottom:2px solid #EAF2E5;}
+  .student-name{font-size:11px;color:#6AAF3D;font-weight:700;letter-spacing:1px;margin-bottom:6px;}
+  .personality{font-family:'DM Serif Display',serif;font-size:28px;color:#1A3A2A;margin-bottom:6px;}
+  .tagline{font-size:13px;color:#6B7B6B;font-style:italic;margin-bottom:12px;}
+  .pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+  .pill{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(106,175,61,.1);border:1px solid rgba(106,175,61,.25);color:#2D5A3D;}
+  .motivation{font-size:11px;color:#6B7B6B;line-height:1.7;}
+  .section{padding:20px 32px;border-bottom:1px solid #EAF2E5;break-inside:avoid;}
+  .sec-label{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:#6AAF3D;font-weight:800;margin-bottom:10px;}
+  .body-text{font-size:12px;line-height:1.85;color:#1E2B1E;}
+  .highlight{background:#F5F9F3;border-left:3px solid #6AAF3D;padding:10px 14px;border-radius:0 8px 8px 0;margin-top:8px;font-size:12px;line-height:1.8;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .card{background:#F5F9F3;border-radius:8px;padding:12px 14px;}
+  .card-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#6B7B6B;font-weight:700;margin-bottom:6px;}
+  .major-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(26,58,42,.06);}
+  .major-name{font-size:12px;font-weight:700;flex:1;}
+  .bar{height:4px;width:80px;background:rgba(26,58,42,.08);border-radius:2px;overflow:hidden;}
+  .bar-fill{height:100%;background:#6AAF3D;border-radius:2px;}
+  .pct{font-size:11px;font-weight:800;color:#6AAF3D;min-width:28px;text-align:right;}
+  .arrow-item{display:flex;gap:8px;margin-bottom:6px;align-items:flex-start;font-size:12px;line-height:1.7;}
+  .arrow{color:#6AAF3D;font-weight:900;flex-shrink:0;}
+  .footer{padding:16px 32px;background:#F5F9F3;text-align:center;font-size:9px;color:#6B7B6B;letter-spacing:1px;}
+  .radar-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;}
+  .radar-item{background:#fff;border:1px solid rgba(106,175,61,.2);border-radius:8px;padding:8px 12px;text-align:center;}
+  .radar-val{font-size:20px;font-weight:800;color:#6AAF3D;line-height:1;}
+  .radar-lbl{font-size:9px;color:#6B7B6B;margin-top:3px;}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="50" r="50" fill="#6AAF3D"/>
+      <polygon points="50,20 84,35 50,50 16,35" fill="white"/>
+      <path d="M30,40 L30,59 C30,68 39,74 50,74 C61,74 70,68 70,59 L70,40 L50,50 Z" fill="white"/>
+      <rect x="80" y="35" width="3.5" height="22" rx="1.5" fill="white"/>
+      <polygon points="81.5,60 84,66 90,66 85,70 87,76 81.5,72 76,76 78,70 73,66 79,66" fill="white"/>
+    </svg>
+    <div>
+      <div class="brand">STARPATH AI</div>
+      <div class="byline">BY STARWISE INTERNATIONAL EDUCATION</div>
+    </div>
+  </div>
+
+  <div class="hero">
+    ${name ? `<div class="student-name">${name} · ${zh?"升学画像报告":"College Profile Report"}</div>` : ''}
+    <div class="personality">${P.snap?.personality||''}</div>
+    <div class="tagline">${P.snap?.tagline||''}</div>
+    <div class="pills">
+      ${(P.snap?.strengths||[]).map(s=>`<span class="pill">⚡ ${s}</span>`).join('')}
+    </div>
+    <div class="motivation">${P.snap?.motivation||''}</div>
+  </div>
+
+  ${P.radar ? `
+  <div class="section">
+    <div class="sec-label">${zh?"能力画像":"Capability Profile"}</div>
+    <div class="radar-grid">
+      ${[
+        [P.radar.academicDepth, zh?"学术深度":"Academic Depth"],
+        [P.radar.creativity,    zh?"创造力":"Creativity"],
+        [P.radar.leadership,    zh?"领导力":"Leadership"],
+        [P.radar.execution,     zh?"执行力":"Execution"],
+        [P.radar.communication, zh?"表达力":"Communication"],
+        [P.radar.empathy,       zh?"同理心":"Empathy"],
+      ].map(([v,l])=>`<div class="radar-item"><div class="radar-val">${v}</div><div class="radar-lbl">${l}</div></div>`).join('')}
+    </div>
+  </div>` : ''}
+
+  <div class="section">
+    <div class="sec-label">${zh?"核心洞察":"Key Insight"}</div>
+    <div class="body-text">${P.summary?.headline||''}</div>
+    <div class="highlight">${P.summary?.keyInsight||''}</div>
+  </div>
+
+  <div class="section">
+    <div class="sec-label">${zh?"专业方向匹配":"Major Matches"}</div>
+    ${(P.majors||[]).map(m=>`
+      <div class="major-row">
+        <span class="major-name">${m.name}</span>
+        <div class="bar"><div class="bar-fill" style="width:${m.fit}%"></div></div>
+        <span class="pct">${m.fit}%</span>
+      </div>`).join('')}
+  </div>
+
+  <div class="section">
+    <div class="sec-label">${zh?"近期行动计划":"Action Plan"}</div>
+    ${(P.next?.month||[]).map(s=>`<div class="arrow-item"><span class="arrow">→</span><span>${s}</span></div>`).join('')}
+    <div class="highlight"><strong>${P.next?.key||''}</strong></div>
+  </div>
+
+  <div class="section">
+    <div class="sec-label">${zh?"思维风格":"Thinking Style"}</div>
+    <div class="grid">
+      <div class="card">
+        <div class="card-label">${zh?"认知风格":"Style"}</div>
+        <div style="font-size:15px;font-weight:800;color:#6AAF3D;">${P.snap?.thinkingStyle||''}</div>
+      </div>
+      <div class="card">
+        <div class="card-label">${zh?"成长提示":"Growth Area"}</div>
+        <div style="font-size:11px;line-height:1.7;">${P.summary?.watchOut||''}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-label">${zh?"活动现状评估":"Activity Assessment"}</div>
+    <div class="body-text">${P.ec?.assessment||''}</div>
+    ${P.ec?.narrative ? `<div class="highlight"><strong>${zh?"叙事主线":"Narrative"}:</strong> ${P.ec.narrative}</div>` : ''}
+    ${(P.ec?.activities||[]).length ? `
+    <div style="margin-top:12px;">
+      ${(P.ec.activities||[]).map(a=>`
+        <div style="margin-bottom:10px;padding:10px 12px;background:#F5F9F3;border-radius:8px;">
+          <div style="font-size:10px;font-weight:800;color:#D97706;letter-spacing:1px;margin-bottom:4px;">${a.type||''}</div>
+          <div style="font-size:12px;font-weight:700;color:#1A3A2A;margin-bottom:3px;">${a.action||''}</div>
+          <div style="font-size:11px;color:#6B7B6B;">${a.when||''}</div>
+        </div>`).join('')}
+    </div>` : ''}
+  </div>
+
+  ${P.essay ? `
+  <div class="section">
+    <div class="sec-label">${zh?"文书方向":"Essay Strategy"}</div>
+    <div class="body-text">${P.essay.coreNarrative||''}</div>
+    ${(P.essay.ideas||[]).map(d=>`<div class="arrow-item"><span class="arrow">✦</span><span>${d}</span></div>`).join('')}
+    ${P.essay.angle ? `<div class="highlight"><strong>${zh?"独特角度":"Unique Angle"}:</strong> ${P.essay.angle}</div>` : ''}
+  </div>` : ''}
+
+  <div class="footer">
+    STARPATH AI · by StarWise International Education · ${new Date().toLocaleDateString(zh?'zh-CN':'en-US')}
+  </div>
+</div>
+<script>
+  document.title = "${docTitle}";
+  window.onload = function() { window.print(); }
+</script>
+</body></html>`;
+
+    const blob = new Blob([html], {type: 'text/html'});
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, '_blank');
+    if (win) {
+      win.onafterprint = () => { URL.revokeObjectURL(url); };
     }
-    setTimeout(() => {
-      window.print();
-      setDownloading(false);
-    }, 300);
+    setTimeout(() => setDownloading(false), 500);
   };
 
   const resetAll = () => {
@@ -691,10 +907,9 @@ export default function StarPathC() {
       else lines.push("A: " + a);
     }
     try {
-      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
-        headers: {"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        headers: {"Content-Type":"application/json"},
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 4000,
@@ -1433,7 +1648,22 @@ export default function StarPathC() {
                     <div className="card">
                       <div className="sl">{zh?"分享与保存":"SHARE & SAVE"}</div>
 
-                      {/* Share link */}
+                      {/* Invite friend */}
+                      <div style={{marginBottom:14}}>
+                        <div className="sl">{zh?"邀请好友测评":"INVITE A FRIEND"}</div>
+                        <p style={{fontSize:12,color:G.muted,lineHeight:1.75,marginBottom:10}}>{t.inviteDesc}</p>
+                        <button onClick={()=>{
+                          const baseUrl = window.location.href.split('#')[0];
+                          navigator.clipboard.writeText(baseUrl).then(()=>{
+                            setShareCopied(true); setTimeout(()=>setShareCopied(false),3000);
+                          });
+                        }}
+                          style={{width:"100%",padding:"11px 16px",borderRadius:10,background:`${G.green}10`,border:`1.5px solid ${G.green}30`,fontSize:13,fontWeight:700,color:G.green,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:16,transition:"all .2s"}}>
+                          🌟 {t.inviteBtn} {shareCopied?"✓":"→"}
+                        </button>
+                      </div>
+
+                      {/* Share report link */}
                       <div style={{marginBottom:14}}>
                         <p style={{fontSize:12,color:G.muted,lineHeight:1.75,marginBottom:10}}>{t.shareDesc}</p>
                         <button onClick={shareReport}
