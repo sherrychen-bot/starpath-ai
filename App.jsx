@@ -22,7 +22,7 @@ const G = {
 // ─── STRINGS ──────────────────────────────────────────────────────────────────
 const T = {
   zh: {
-    brand: "STARPATH FINDER", byLine: "星途潜能测试",
+    brand: "STARPATH FINDER", byLine: "星途潜能测试 · StarWise International",
     tagline: "发现你的成长方向",
     subtitle: "不是考试，不是评分\n15 分钟，发现你的成长方向",
     start: "开始免费测评",
@@ -75,7 +75,7 @@ const T = {
     school: s=>{const m={us_public:"美国公立高中",us_private:"美国私立高中",ib:"IB课程",ap:"AP课程",intl:"国际学校",boarding:"寄宿学校",other:"其他"};return Array.isArray(s)?s.map(v=>m[v]||v).join(" · "):(m[s]||s);},
   },
   en: {
-    brand: "STARPATH FINDER", byLine: "星途潜能测试",
+    brand: "STARPATH FINDER", byLine: "星途潜能测试 · StarWise International",
     tagline: "Discover Your True Direction",
     subtitle: "Not a test. Not a score.\n15 minutes to discover your true direction.",
     start: "Start Your Free Assessment",
@@ -1100,7 +1100,8 @@ ${shareUrl}`;
         <div style={{width:64,height:64,borderRadius:"50%",overflow:"hidden",boxShadow:`0 14px 36px ${G.green}45`}}><StarWiseLogo size={64}/></div>
       </div>
 
-      <p style={{fontSize:10,letterSpacing:4,color:G.green,fontWeight:800,marginBottom:3,textTransform:"uppercase"}}>{t.brand}</p>
+      <p style={{fontSize:10,letterSpacing:4,color:G.green,fontWeight:800,marginBottom:2,textTransform:"uppercase"}}>{t.brand}</p>
+      <p style={{fontSize:9,letterSpacing:2,color:G.sage,fontWeight:700,marginBottom:22,opacity:.7}}>{t.byLine}</p>
       
 
       <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(28px,5.5vw,52px)",fontWeight:400,textAlign:"center",lineHeight:1.18,marginBottom:14,color:G.greenDk}}>
