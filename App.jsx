@@ -22,9 +22,9 @@ const G = {
 // ─── STRINGS ──────────────────────────────────────────────────────────────────
 const T = {
   zh: {
-    brand: "STARPATH AI", byLine: "by StarWise",
-    tagline: "发现你真正的方向",
-    subtitle: "不是考试，不是评分\n15 分钟，生成专属于你的美本升学画像",
+    brand: "STARPATH FINDER", byLine: "星途潜能测试",
+    tagline: "发现你的成长方向",
+    subtitle: "不是考试，不是评分\n15 分钟，发现你的成长方向",
     start: "开始免费测评",
     startNote: "完全免费 · 约 15 分钟 · 无需注册",
     next: "下一题 →", generate: "生成我的升学画像 ✦",
@@ -34,16 +34,18 @@ const T = {
     retry: "重新生成", backQ: "返回检查答案", lang: "EN",
     // email gate
     gateTitle: "你的画像已生成！",
-    gateDesc:  "输入邮箱保存完整报告，并可一键发送给升学顾问。",
+    gateDesc:  "填写以下信息，保存你的完整报告。",
     namePH: "你的名字（可选）", emailPH: "your@email.com",
     gateBtn: "查看完整报告 →", gateSkip: "先跳过",
     gateNote: "不会收到垃圾邮件。数据安全加密保存。",
     // report
-    rptTitle: "升学画像报告",
-    t0:"📋 总览", t1:"📚 学术", t2:"🏆 活动", t3:"🎓 选校", t4:"📤 发送顾问",
+    rptTitle: "星途成长报告",
+    t0:"✦ 成长画像", t1:"📚 学术方向", t2:"🌱 成长路径", t3:"📤 获取规划",
     // summary labels
-    lInsight:"核心洞察", lGrowth:"成长提示", lStyle:"思维风格", lRadar:"能力画像",
-    rAxes:["学术深度","创造力","领导力","执行力","表达力","同理心"],
+    lArchetype:"成长原型", lInsight:"核心洞察", lGrowth:"成长提示", lStyle:"思维风格", lRadar:"五维能力画像",
+    lStrengths3:"你的三大核心优势", lAcadDirs:"潜在学术方向", lGrowthPath:"推荐成长路径",
+    lProjIdeas:"项目创意", lSugActs:"推荐活动", lCtaTitle:"想要个性化路径规划？", lCtaDesc:"预约1对1策略咨询，把你的成长画像转化为真实的升学路线图。", lCtaBtn:"获取我的个性化规划",
+    rAxes:["学术好奇心","分析能力","创造力","社会影响力","领导力"],
     lMajors:"专业方向匹配", lNextMonth:"近期行动计划", lNextKey:"申请前最关键",
     lCurriosity:"自然好奇心", lDomains:"强势学科域", lLearning:"学习风格",
     lMajorDetail:"专业方向详情", lCourses:"代表课程", lCareers:"职业方向",
@@ -73,25 +75,27 @@ const T = {
     school: s=>{const m={us_public:"美国公立高中",us_private:"美国私立高中",ib:"IB课程",ap:"AP课程",intl:"国际学校",boarding:"寄宿学校",other:"其他"};return Array.isArray(s)?s.map(v=>m[v]||v).join(" · "):(m[s]||s);},
   },
   en: {
-    brand: "STARPATH AI", byLine: "by StarWise",
-    tagline: "Discover your true direction",
-    subtitle: "Not a test. Not a score.\n15 minutes to your personalized US college profile.",
-    start: "Start Free Assessment",
-    startNote: "Free · ~15 min · No account needed",
+    brand: "STARPATH FINDER", byLine: "星途潜能测试",
+    tagline: "Discover Your True Direction",
+    subtitle: "Not a test. Not a score.\n15 minutes to discover your true direction.",
+    start: "Start Your Free Assessment",
+    startNote: "Free · ~15 min · No signup required",
     next: "Next →", generate: "Generate My Profile ✦",
     charLeft: (n, min) => n > 0 ? `✓` : ``,
     loading: ["Analyzing your learning style…","Identifying core strengths…","Matching academic directions…","Planning activity strategy…","Building your profile…"],
     errTitle: "Something went wrong", errDesc: "Your answers are saved — just retry",
     retry: "Try Again", backQ: "Review answers", lang: "中文",
     gateTitle: "Your profile is ready!",
-    gateDesc:  "Enter your email to save the full report and send it to a counselor.",
+    gateDesc:  "Fill in your info to save your full report.",
     namePH: "Your name (optional)", emailPH: "your@email.com",
     gateBtn: "View Full Report →", gateSkip: "Skip for now",
     gateNote: "No spam. Your data is encrypted and private.",
-    rptTitle: "College Profile Report",
-    t0:"📋 Summary", t1:"📚 Academics", t2:"🏆 Activities", t3:"🎓 Colleges", t4:"📤 Send",
-    lInsight:"Key Insight", lGrowth:"Growth Area", lStyle:"Thinking Style", lRadar:"Capability Profile",
-    rAxes:["Academic Depth","Creativity","Leadership","Execution","Communication","Empathy"],
+    rptTitle: "StarPath Profile Report",
+    t0:"✦ Your Profile", t1:"📚 Academic Directions", t2:"🌱 Growth Pathway", t3:"📤 Get Your Plan",
+    lArchetype:"Growth Archetype", lInsight:"Key Insight", lGrowth:"Growth Area", lStyle:"Thinking Style", lRadar:"Capability Profile",
+    lStrengths3:"Your Core Strengths", lAcadDirs:"Potential Academic Directions", lGrowthPath:"Suggested Growth Pathway",
+    lProjIdeas:"Project Ideas", lSugActs:"Suggested Activities", lCtaTitle:"Want a personalized pathway plan?", lCtaDesc:"Book a 1-on-1 strategy session to turn your profile into a real academic roadmap.", lCtaBtn:"Get My Personalized Plan",
+    rAxes:["Academic Curiosity","Analytical Strength","Creativity","Social Impact Drive","Leadership"],
     lMajors:"Top Major Matches", lNextMonth:"Action Plan", lNextKey:"Before Applications",
     lCurriosity:"Natural Curiosity", lDomains:"Strongest Domains", lLearning:"Learning Style",
     lMajorDetail:"Major Matches Detail", lCourses:"Sample Courses", lCareers:"Career Paths",
@@ -273,66 +277,64 @@ Return this exact structure:
   "snap": {
     "grade": "string",
     "schoolType": "string key",
-    "personality": "${zh?"3-4字人格类型":"3-5 word type e.g. Systems Builder"}",
-    "tagline": "${zh?"1句话，让学生感到被深度看见，15字内":"1 line under 12 words, make student feel truly seen"}",
-    "strengths": ["${zh?"3个核心才干，4字内":"3 strengths, 3-4 words"}"],
-    "motivation": "${zh?"核心驱动，1句话":"Core drive, one sentence"}",
-    "thinkingStyle": "${zh?"分析型/创造型/表达型/实践型/人文型":"Analytical/Creative/Expressive/Applied/Humanistic"}"
+    "archetype": "${zh?"从10种成长原型中选最匹配的一种：系统探索者/分析型战略者/创造型建造者/影响力领导者/全球思考者/科学探索者/叙事表达者/跨界创新者/共情行动者/独立开拓者":"One of: Systems Explorer / Analytical Strategist / Creative Builder / Impact Leader / Global Thinker / Scientific Investigator / Storytelling Communicator / Interdisciplinary Innovator / Empathy Advocate / Independent Pioneer"}",
+    "personality": "${zh?"3-4字人格标签，如：分析型探索者":"3-5 word label, e.g. Analytical Explorer"}",
+    "tagline": "${zh?"2句话画像，让学生感到被深度看见":"2 sentences, warm, make student feel truly seen"}",
+    "strengths": [
+      {"name":"${zh?"优势名称，4字内":"3-4 word name"}","desc":"${zh?"一句话说明，结合具体回答":"1 sentence with specific evidence"}"},
+      {"name":"","desc":""},
+      {"name":"","desc":""}
+    ],
+    "motivation": "${zh?"核心驱动，1句话":"Core drive, one sentence"}"
   },
   "radar": {
-    "academicDepth": 75,
+    "academicCuriosity": 75,
+    "analyticalStrength": 80,
     "creativity": 68,
-    "leadership": 82,
-    "execution": 71,
-    "communication": 88,
-    "empathy": 79
+    "socialImpactDrive": 72,
+    "leadership": 65
   },
   "summary": {
-    "headline": "${zh?"2-3句综合画像，温暖有洞察，让学生感到被深度理解":"2-3 warm insightful sentences — student feels truly understood"}",
-    "keyInsight": "${zh?"最重要洞察——最特别、最值得发展的地方，2句":"Single most important insight, 2 sentences, specific to answers"}",
-    "watchOut": "${zh?"一个成长点，友善直接，1-2句":"One gentle growth area, 1-2 sentences"}",
-    "counselorNote": "${zh?"给顾问的专业备注，1-2句，帮助顾问快速了解这个学生":"Professional note for counselor, 1-2 sentences"}"
+    "headline": "${zh?"2-3句综合画像，温暖有洞察":"2-3 warm insightful sentences"}",
+    "keyInsight": "${zh?"最重要洞察，2句，必须引用具体回答":"Single most important insight, 2 sentences, cite specific answers"}",
+    "watchOut": "${zh?"一个成长点，友善直接":"One gentle growth area"}",
+    "counselorNote": "${zh?"给顾问的专业备注，1-2句":"Professional note for counselor, 1-2 sentences"}"
   },
   "academic": {
-    "curiosity": "${zh?"基于回答的真实兴趣，2句":"True curiosity from answers, 2 sentences"}",
-    "domains": ["${zh?"2-3个强势学科域":"2-3 strongest domains"}"],
-    "learningStyle": "${zh?"学习风格，结合课堂偏好，2句":"Learning style, 2 sentences"}"
+    "directions": ["${zh?"4-5个潜在学术方向，如 Environmental Science":"4-5 academic directions, e.g. Environmental Science"}"],
+    "curiosity": "${zh?"基于回答的真实兴趣，2句":"True intellectual curiosity, 2 sentences"}",
+    "learningStyle": "${zh?"学习风格，结合课堂偏好，1-2句":"Learning style, 1-2 sentences"}"
   },
   "majors": [
-    {"name":"","fit":90,"why":"${zh?"为什么适合，结合具体回答，2句":"Why it fits with specific evidence, 2 sentences"}","courses":["",""],"careers":["",""]}
+    {"name":"","fit":90,"why":"${zh?"为什么适合，2句":"Why it fits, 2 sentences"}","courses":["",""],"careers":["",""]}
   ],
-  "courses": {
-    "apib": ["${zh?"3-4门推荐AP/IB，附简短理由":"3-4 AP/IB with rationale"}"],
-    "note": "${zh?"选课策略总建议，2句":"Overall strategy, 2 sentences"}"
+  "growth": {
+    "projects": ["${zh?"3个具体项目创意，可操作":"3 specific actionable project ideas"}"],
+    "activities": ["${zh?"4-5个推荐活动类型":"4-5 suggested activity types"}"],
+    "narrative": "${zh?"活动主线叙事建议，2句":"Activity narrative theme, 2 sentences"}"
   },
   "ec": {
     "assessment": "${zh?"活动现状评估，2句":"Activity assessment, 2 sentences"}",
-    "narrative": "${zh?"活动主线叙事，2句":"Narrative theme, 2 sentences"}",
     "gaps": ["${zh?"1-2个需要补强":"1-2 gaps"}"],
     "activities": [
       {"type":"","action":"${zh?"具体可操作":"Specific actionable"}","why":"${zh?"1句":"1 sentence"}","when":"${zh?"时间":"When"}"}
     ]
   },
-
-  "essay": {
-    "coreNarrative": "${zh?"核心故事主题，2句":"Core narrative, 2 sentences"}",
-    "ideas": ["${zh?"2个Common App文书方向":"2 essay angles"}"],
-    "angle": "${zh?"最独特的申请角度，2句":"Most unique angle, 2 sentences"}"
-  },
   "next": {
-    "month": ["${zh?"本月2-3件具体事":"2-3 actions this month"}"],
-    "year": ["${zh?"今年2-3个里程碑":"2-3 milestones this year"}"],
-    "key": "${zh?"申请前最关键一件事":"Single most important thing before applying"}"
+    "month": ["${zh?"近期2-3件具体行动":"2-3 specific near-term actions"}"],
+    "key": "${zh?"最关键一件事":"Single most important thing"}"
   }
 }
 
 Rules:
+- snap.strengths: exactly 3 objects with name+desc, desc must cite specific answers
+- radar: exactly these 5 keys, integers 40-95
+- academic.directions: exactly 4-5 items
+- growth.projects: exactly 3 specific actionable ideas
 - majors: exactly 4, sorted by fit desc
 - ec.activities: exactly 3
-- Do NOT include a colleges key
-- radar: all 6 values must be integers 40-95, derived from specific answers
-- Every insight MUST cite specific answers — zero generic advice
-- Tone: warm mentor who truly sees the student
+- Every insight MUST reference specific student answers — zero generic advice
+- Tone: warm encouraging mentor who truly sees this student
 - Pure JSON only`;
 };
 
@@ -418,6 +420,7 @@ export default function StarPathC() {
   // send
   const [sendMode, setSendMode] = useState(null); // null|starwise|own
   const [cEmail, setCEmail]   = useState("");
+  const [parentPhone, setParentPhone] = useState("");
   const [note, setNote]       = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent]       = useState(false);
@@ -574,13 +577,70 @@ export default function StarPathC() {
   };
 
   const submitGate = () => {
-    if (email && !email.includes("@")) {
-      setEmailErr(lang==="zh" ? "请输入有效邮箱" : "Please enter a valid email");
+    const zh = lang === "zh";
+    if (!name.trim()) {
+      setEmailErr(zh ? "请输入你的名字" : "Please enter your name");
+      return;
+    }
+    if (!email.trim() || !email.includes("@")) {
+      setEmailErr(zh ? "请输入有效邮箱" : "Please enter a valid email");
       return;
     }
     setEmailErr("");
+    // Auto-notify counselor via EmailJS
+    sendLeadNotification(name, email, profile, lang);
     setPhase("result");
     setTab("summary");
+  };
+
+  const sendLeadNotification = (studentName, studentEmail, P, lang) => {
+    if (!P) return;
+    const zh = lang === "zh";
+    const summary = [
+      `新学生测评完成 — ${new Date().toLocaleString("zh-CN")}`,
+      ``,
+      `姓名: ${studentName}`,
+      `邮箱: ${studentEmail}`,
+      ``,
+      `【${P.snap?.personality || ""}】`,
+      `${P.snap?.tagline || ""}`,
+      ``,
+      `思维风格: ${P.snap?.thinkingStyle || ""}`,
+      `核心驱动: ${P.snap?.motivation || ""}`,
+      ``,
+      `核心洞察:`,
+      P.summary?.headline || "",
+      ``,
+      `专业方向匹配:`,
+      ...(P.majors||[]).map(m => `  ${m.name} — ${m.fit}%`),
+      ``,
+      `近期行动计划:`,
+      ...(P.next?.month||[]).map(s => `  → ${s}`),
+      ``,
+      `顾问备注:`,
+      P.summary?.counselorNote || "",
+      ``,
+      `—— StarPath AI · by StarWise`,
+    ].join("\n");
+
+    // Send to Google Sheets via Apps Script
+    fetch("https://script.google.com/a/macros/foodprintai.com/s/AKfycbzU8qPOyjytLX9NiIgaf5e0OvZLqgGVUdoXV4aa2RQfjLZ0-0MhHxbOhVA1lWlUG9Tl/exec", {
+      method: "POST",
+      mode: "no-cors",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        name:          studentName,
+        email:         studentEmail,
+        grade:         P.snap?.grade || "",
+        school:        P.snap?.schoolType || "",
+        archetype:     P.snap?.archetype || "",
+        motivation:    P.snap?.motivation || "",
+        major1:        P.majors?.[0]?.name || "",
+        major2:        P.majors?.[1]?.name || "",
+        counselorNote: P.summary?.counselorNote || "",
+        parentPhone:   parentPhone || "",
+      })
+    }).catch(e => console.log("Sheets error:", e));
   };
 
   // Build plain-text report summary for clipboard / email
@@ -592,6 +652,7 @@ export default function StarPathC() {
     lines.push(`STARPATH AI — ${t.rptTitle}`);
     if (name) lines.push(`${zh?"学生":"Student"}: ${name}`);
     if (email) lines.push(`Email: ${email}`);
+    if (parentPhone) lines.push(`${zh?"家长手机":"Parent Phone"}: ${parentPhone}`);
     lines.push("═══════════════════════════════");
     lines.push("");
     lines.push(`【${P.snap?.personality}】`);
@@ -620,7 +681,7 @@ export default function StarPathC() {
     lines.push(P.summary?.counselorNote || "");
     lines.push("");
     lines.push("───────────────────────────────");
-    lines.push(`Generated by StarPath AI · by StarWise`);
+    lines.push(`Generated by StarWise International`);
     return lines.join("\n");
   };
 
@@ -630,7 +691,7 @@ export default function StarPathC() {
     setSending(true);
     const reportText = buildReportText(profile, t, lang);
     const subject = encodeURIComponent(
-      `StarPath AI Report — ${profile.snap?.personality||""}${name ? " · " + name : ""}`
+      `[StarPath Lead] ${name||"学生"} — ${profile.snap?.personality||""}`
     );
     const body = encodeURIComponent((note ? note + "\n\n" : "") + reportText);
     const to = sendMode === "own" ? encodeURIComponent(cEmail) : "";
@@ -866,7 +927,7 @@ export default function StarPathC() {
   </div>` : ''}
 
   <div class="footer">
-    STARPATH AI · by StarWise International Education · ${new Date().toLocaleDateString(zh?'zh-CN':'en-US')}
+    StarWise International · ${new Date().toLocaleDateString(zh?'zh-CN':'en-US')}
   </div>
 </div>
 <script>
@@ -963,7 +1024,7 @@ export default function StarPathC() {
       </div>
 
       <p style={{fontSize:10,letterSpacing:4,color:G.green,fontWeight:800,marginBottom:3,textTransform:"uppercase"}}>{t.brand}</p>
-      <p style={{fontSize:9,letterSpacing:3,color:G.sage,fontWeight:700,marginBottom:24,opacity:.65,textTransform:"uppercase"}}>{t.byLine}</p>
+      
 
       <h1 style={{fontFamily:"'DM Serif Display',serif",fontSize:"clamp(28px,5.5vw,52px)",fontWeight:400,textAlign:"center",lineHeight:1.18,marginBottom:14,color:G.greenDk}}>
         {t.tagline}
@@ -1167,7 +1228,7 @@ export default function StarPathC() {
             <StarWiseLogo size={34}/>
             <div>
               <div style={{fontSize:11,fontWeight:800,color:G.greenDk,letterSpacing:1.5}}>{t.brand}</div>
-              <div style={{fontSize:8,fontWeight:700,color:G.sage,letterSpacing:2.5,textTransform:"uppercase",opacity:.7}}>{t.byLine}</div>
+              
             </div>
           </div>
 
@@ -1219,10 +1280,10 @@ export default function StarPathC() {
     const P  = profile;
     const zh = lang === "zh";
     const TABS = [
-      {id:"summary",    label:t.t0, color:G.green},
-      {id:"academic",   label:t.t1, color:G.blue},
-      {id:"activities", label:t.t2, color:G.amber},
-      {id:"send",       label:t.t4, color:G.sage},
+      {id:"summary",  label:t.t0, color:G.green},
+      {id:"academic", label:t.t1, color:G.blue},
+      {id:"growth",   label:t.t2, color:G.amber},
+      {id:"send",     label:t.t3, color:G.sage},
     ];
 
     const Pill = ({children,color=G.green}) => (
@@ -1252,7 +1313,7 @@ export default function StarPathC() {
             <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:20}}>
               <StarWiseLogo size={28}/>
               <span style={{fontSize:10,fontWeight:800,color:G.greenDk,letterSpacing:2}}>{t.brand}</span>
-              <span style={{fontSize:8,color:G.sage,fontWeight:700,letterSpacing:2,opacity:.55}}>· {t.byLine.toUpperCase()}</span>
+              <span style={{fontSize:8,color:G.sage,fontWeight:700,letterSpacing:2,opacity:.55}}></span>
             </div>
 
             {name && (
@@ -1261,17 +1322,18 @@ export default function StarPathC() {
               </p>
             )}
 
-            <h1 style={{fontFamily:"'DM Serif Display',serif",fontSize:"clamp(26px,5vw,44px)",fontWeight:400,lineHeight:1.18,color:G.greenDk,marginBottom:10}}>
+            {P.snap?.archetype && (
+              <div style={{display:"inline-block",padding:"4px 14px",borderRadius:20,background:"rgba(106,175,61,.1)",border:"1px solid rgba(106,175,61,.25)",fontSize:11,fontWeight:800,color:G.sage,letterSpacing:1,marginBottom:12,textTransform:"uppercase"}}>
+                {P.snap.archetype}
+              </div>
+            )}
+            <h1 style={{fontFamily:"'DM Serif Display',serif",fontSize:"clamp(26px,5vw,44px)",fontWeight:400,lineHeight:1.18,color:G.greenDk,marginBottom:12}}>
               {P.snap?.personality}
             </h1>
-            <p style={{fontSize:15,color:G.muted,fontStyle:"italic",marginBottom:18,lineHeight:1.75,maxWidth:480,margin:"0 auto 18px"}}>{P.snap?.tagline}</p>
-
+            <p style={{fontSize:14,color:G.muted,lineHeight:1.9,maxWidth:500,margin:"0 auto 18px"}}>{P.snap?.tagline}</p>
             <div style={{display:"flex",gap:7,justifyContent:"center",flexWrap:"wrap",marginBottom:14}}>
               <Pill>{t.grade(P.snap?.grade)}</Pill>
               <Pill>{t.school(P.snap?.schoolType)}</Pill>
-              {(P.snap?.strengths||[]).map((s,i)=>(
-                <Pill key={i} color={[G.green,G.blue,G.amber][i%3]}>⚡ {s}</Pill>
-              ))}
             </div>
             <p style={{fontSize:12,color:G.muted,maxWidth:460,margin:"0 auto",lineHeight:1.8,fontWeight:500}}>{P.snap?.motivation}</p>
           </div>
@@ -1292,10 +1354,11 @@ export default function StarPathC() {
         {/* ── Tab Content ── */}
         <div style={{maxWidth:680,margin:"0 auto",padding:"26px 16px 80px"}}>
 
-          {/* ═══ SUMMARY ═══ */}
+          {/* ═══ TAB 1: YOUR PROFILE (Summary) ═══ */}
           {tab === "summary" && (
             <div className="anim-fade">
-              {/* Headline insight */}
+
+              {/* 1. Key Insight */}
               <div className="card" style={{borderLeft:`4px solid ${G.green}`}}>
                 <div className="sl">{t.lInsight}</div>
                 <p style={{fontSize:15,lineHeight:1.9,color:G.greenDk,fontWeight:600,marginBottom:14}}>{P.summary?.headline}</p>
@@ -1304,16 +1367,12 @@ export default function StarPathC() {
                 </div>
               </div>
 
-
-              {/* ── Radar Chart ── */}
+              {/* 2. Radar Chart */}
               {P.radar && (() => {
                 const axes = t.rAxes;
-                const vals = [P.radar.academicDepth, P.radar.creativity, P.radar.leadership, P.radar.execution, P.radar.communication, P.radar.empathy];
+                const radarKeys = ["academicCuriosity","analyticalStrength","creativity","socialImpactDrive","leadership"];
+                const vals = radarKeys.map(k => P.radar[k] || 0);
                 const data = axes.map((a,i) => ({ subject: a, value: vals[i], fullMark: 100 }));
-                const CustomDot = (props) => {
-                  const { cx, cy, value } = props;
-                  return <circle cx={cx} cy={cy} r={4} fill={G.green} stroke="#fff" strokeWidth={2} />;
-                };
                 const CustomTooltip = ({ active, payload }) => {
                   if (!active || !payload?.length) return null;
                   return (
@@ -1333,48 +1392,28 @@ export default function StarPathC() {
                             <stop offset="100%" stopColor={G.green} stopOpacity={0.05}/>
                           </radialGradient>
                         </defs>
-                        <PolarGrid
-                          gridType="polygon"
-                          stroke="rgba(26,58,42,.08)"
-                        />
-                        <PolarAngleAxis
-                          dataKey="subject"
-                          tick={({ x, y, payload, cx, cy }) => {
-                            const dx = x - cx;
-                            const dy = y - cy;
-                            const dist = Math.sqrt(dx*dx + dy*dy);
-                            const nx = x + (dx/dist)*10;
-                            const ny = y + (dy/dist)*10;
-                            const val = data.find(d=>d.subject===payload.value)?.value;
-                            return (
-                              <g>
-                                <text x={nx} y={ny-7} textAnchor="middle" dominantBaseline="middle"
-                                  style={{fontSize:10,fontWeight:700,fill:"rgba(26,58,42,.5)",fontFamily:"'DM Sans',sans-serif"}}>
-                                  {payload.value}
-                                </text>
-                                <text x={nx} y={ny+8} textAnchor="middle" dominantBaseline="middle"
-                                  style={{fontSize:11,fontWeight:800,fill:G.green,fontFamily:"'DM Sans',sans-serif"}}>
-                                  {val}
-                                </text>
-                              </g>
-                            );
-                          }}
-                        />
+                        <PolarGrid gridType="polygon" stroke="rgba(26,58,42,.08)"/>
+                        <PolarAngleAxis dataKey="subject" tick={({ x, y, payload, cx, cy }) => {
+                          const dx = x-cx, dy = y-cy;
+                          const dist = Math.sqrt(dx*dx+dy*dy);
+                          const nx = x+(dx/dist)*10, ny = y+(dy/dist)*10;
+                          const val = data.find(d=>d.subject===payload.value)?.value;
+                          return (
+                            <g>
+                              <text x={nx} y={ny-7} textAnchor="middle" dominantBaseline="middle" style={{fontSize:10,fontWeight:700,fill:"rgba(26,58,42,.5)",fontFamily:"'DM Sans',sans-serif"}}>{payload.value}</text>
+                              <text x={nx} y={ny+8} textAnchor="middle" dominantBaseline="middle" style={{fontSize:11,fontWeight:800,fill:G.green,fontFamily:"'DM Sans',sans-serif"}}>{val}</text>
+                            </g>
+                          );
+                        }}/>
                         <Tooltip content={<CustomTooltip/>}/>
-                        <Radar
-                          dataKey="value"
-                          stroke={G.green}
-                          strokeWidth={2}
-                          fill="url(#radarFill)"
-                          dot={<CustomDot/>}
-                          activeDot={{r:6, fill:G.greenDk, stroke:"#fff", strokeWidth:2}}
-                        />
+                        <Radar dataKey="value" stroke={G.green} strokeWidth={2} fill="url(#radarFill)"
+                          dot={(props)=><circle cx={props.cx} cy={props.cy} r={4} fill={G.green} stroke="#fff" strokeWidth={2}/>}
+                          activeDot={{r:6,fill:G.greenDk,stroke:"#fff",strokeWidth:2}}/>
                       </RadarChart>
                     </ResponsiveContainer>
-                    {/* Score badges */}
                     <div style={{display:"flex",flexWrap:"wrap",gap:7,justifyContent:"center",marginTop:4}}>
                       {data.map((d,i)=>{
-                        const clr = d.value>=80 ? G.green : d.value>=65 ? G.blue : G.amber;
+                        const clr = d.value>=80?G.green:d.value>=65?G.blue:G.amber;
                         return (
                           <div key={i} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 11px",borderRadius:20,background:`${clr}0D`,border:`1px solid ${clr}25`}}>
                             <span style={{fontSize:10,fontWeight:800,color:clr}}>{d.value}</span>
@@ -1387,74 +1426,64 @@ export default function StarPathC() {
                 );
               })()}
 
-              {/* 2-col: style + growth */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
-                <div className="card" style={{background:"rgba(106,175,61,.04)",borderColor:"rgba(106,175,61,.15)",marginBottom:0}}>
-                  <div className="sl">{t.lStyle}</div>
-                  <div style={{fontSize:17,fontWeight:800,color:G.green,marginBottom:8}}>{P.snap?.thinkingStyle}</div>
-                  <p style={{fontSize:12,color:G.muted,lineHeight:1.75}}>{P.academic?.learningStyle}</p>
-                </div>
-                <div className="card" style={{background:"rgba(212,119,6,.04)",borderColor:"rgba(212,119,6,.12)",marginBottom:0}}>
-                  <div className="sl">{t.lGrowth}</div>
-                  <p style={{fontSize:13,color:G.text,lineHeight:1.75}}>{P.summary?.watchOut}</p>
-                </div>
-              </div>
-
-              {/* Majors preview */}
+              {/* 3. Core Strengths */}
               <div className="card">
-                <div className="sl">{t.lMajors}</div>
-                {(P.majors||[]).map((m,i)=>(
-                  <div key={i} style={{paddingBottom:11,marginBottom:11,borderBottom:i<(P.majors.length-1)?"1px solid rgba(26,58,42,.05)":"none"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
-                      <span style={{fontSize:13,fontWeight:700,color:G.greenDk}}>{m.name}</span>
+                <div className="sl">{t.lStrengths3}</div>
+                {(P.snap?.strengths||[]).map((s,i)=>{
+                  const strength = typeof s === "object" ? s : {name:s, desc:""};
+                  const colors = [G.green, G.blue, G.amber];
+                  return (
+                    <div key={i} style={{display:"flex",gap:14,padding:"12px 0",borderBottom:i<(P.snap.strengths.length-1)?"1px solid rgba(26,58,42,.05)":"none",alignItems:"flex-start"}}>
+                      <div style={{width:36,height:36,borderRadius:10,background:`${colors[i%3]}15`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>
+                        {["✦","◈","◉"][i]}
+                      </div>
+                      <div>
+                        <div style={{fontSize:13,fontWeight:800,color:G.greenDk,marginBottom:3}}>{strength.name}</div>
+                        <div style={{fontSize:12,color:G.muted,lineHeight:1.7}}>{strength.desc}</div>
+                      </div>
                     </div>
-                    <Bar score={m.fit}/>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
-              {/* Next Steps */}
-              <div className="card" style={{background:"rgba(106,175,61,.03)",borderColor:"rgba(106,175,61,.12)"}}>
-                <div className="sl">{t.lNextMonth}</div>
-                {(P.next?.month||[]).map((s,i)=>(
-                  <div key={i} style={{display:"flex",gap:10,marginBottom:8,alignItems:"flex-start"}}>
-                    <span style={{color:G.green,fontWeight:900,flexShrink:0,marginTop:2}}>→</span>
-                    <span style={{fontSize:13,lineHeight:1.7,color:G.text}}>{s}</span>
-                  </div>
-                ))}
-                <div style={{marginTop:14,padding:"12px 15px",borderRadius:10,background:"rgba(106,175,61,.07)",border:"1px solid rgba(106,175,61,.2)"}}>
-                  <div style={{fontSize:9,fontWeight:800,color:G.green,letterSpacing:2,marginBottom:6}}>✦ {t.lNextKey.toUpperCase()}</div>
-                  <p style={{fontSize:13,fontWeight:700,color:G.greenDk,lineHeight:1.75}}>{P.next?.key}</p>
-                </div>
+              {/* 4. Growth tip */}
+              <div className="card" style={{background:"rgba(212,119,6,.04)",borderColor:"rgba(212,119,6,.12)"}}>
+                <div className="sl">{t.lGrowth}</div>
+                <p style={{fontSize:13,color:G.text,lineHeight:1.75}}>{P.summary?.watchOut}</p>
               </div>
 
-              {/* Send CTA banner */}
-              <div className="card" style={{background:G.greenDk,border:"none",textAlign:"center",padding:"28px 24px"}}>
-                <div style={{fontSize:22,marginBottom:10}}>📤</div>
-                <h3 style={{fontFamily:"'DM Serif Display',serif",fontSize:20,fontWeight:400,color:"#fff",marginBottom:8}}>{t.sendTitle}</h3>
-                <p style={{fontSize:12,color:"rgba(255,255,255,.5)",lineHeight:1.85,marginBottom:18,maxWidth:320,margin:"0 auto 18px"}}>{t.sendDesc}</p>
+              {/* CTA */}
+              <div className="card" style={{background:G.greenDk,border:"none",textAlign:"center",padding:"32px 24px"}}>
+                <h3 style={{fontFamily:"'DM Serif Display',serif",fontSize:22,fontWeight:400,color:"#fff",marginBottom:10}}>{t.lCtaTitle}</h3>
+                <p style={{fontSize:13,color:"rgba(255,255,255,.55)",lineHeight:1.85,marginBottom:20,maxWidth:340,margin:"0 auto 20px"}}>{t.lCtaDesc}</p>
                 <button className="gbtn" onClick={()=>setTab("send")}
-                  style={{background:G.green,color:"#fff",padding:"11px 26px",fontSize:13,boxShadow:`0 6px 20px ${G.green}55`}}>
-                  {t.sendBtn} →
+                  style={{background:G.green,color:"#fff",padding:"13px 30px",fontSize:14,boxShadow:`0 6px 20px ${G.green}55`}}>
+                  {t.lCtaBtn}
                 </button>
               </div>
             </div>
           )}
 
-          {/* ═══ ACADEMICS ═══ */}
+          {/* ═══ TAB 2: ACADEMIC DIRECTIONS ═══ */}
           {tab === "academic" && (
             <div className="anim-fade">
+
+              {/* Curiosity + Directions */}
               <div className="card">
                 <div className="sl">{t.lCurriosity}</div>
                 <p style={{fontSize:14,color:G.text,lineHeight:1.9,marginBottom:16}}>{P.academic?.curiosity}</p>
-                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                  {(P.academic?.domains||[]).map((d,i)=>(
-                    <div key={i} style={{padding:"9px 15px",borderRadius:10,background:"rgba(106,175,61,.07)",border:"1px solid rgba(106,175,61,.18)",fontSize:13,fontWeight:700,color:G.greenDk}}>{d}</div>
+                <div className="sl">{t.lAcadDirs}</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                  {(P.academic?.directions||P.academic?.domains||[]).map((d,i)=>(
+                    <div key={i} style={{padding:"12px 14px",borderRadius:10,background:"rgba(59,130,246,.05)",border:"1px solid rgba(59,130,246,.15)",display:"flex",alignItems:"center",gap:8}}>
+                      <span style={{color:G.blue,fontWeight:900,fontSize:14}}>◈</span>
+                      <span style={{fontSize:13,fontWeight:700,color:G.greenDk}}>{d}</span>
+                    </div>
                   ))}
                 </div>
               </div>
 
-              {/* Major detail */}
+              {/* Major matches detail */}
               <div className="card">
                 <div className="sl">{t.lMajorDetail}</div>
                 <div style={{display:"flex",gap:6,marginBottom:18,flexWrap:"wrap"}}>
@@ -1472,95 +1501,86 @@ export default function StarPathC() {
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                       <div style={{padding:"12px 14px",borderRadius:10,background:"rgba(59,130,246,.05)",border:"1px solid rgba(59,130,246,.12)"}}>
                         <div style={{fontSize:8,fontWeight:800,color:G.blue,marginBottom:8,letterSpacing:2}}>{t.lCourses.toUpperCase()}</div>
-                        {(m.courses||[]).map((c,i)=><div key={i} style={{fontSize:12,color:G.muted,marginBottom:5,paddingLeft:8,borderLeft:"2px solid rgba(59,130,246,.25)",lineHeight:1.5}}>{c}</div>)}
+                        {(m.courses||[]).map((c,ci)=><div key={ci} style={{fontSize:12,color:G.muted,marginBottom:5,paddingLeft:8,borderLeft:"2px solid rgba(59,130,246,.25)",lineHeight:1.5}}>{c}</div>)}
                       </div>
                       <div style={{padding:"12px 14px",borderRadius:10,background:"rgba(106,175,61,.05)",border:"1px solid rgba(106,175,61,.12)"}}>
                         <div style={{fontSize:8,fontWeight:800,color:G.green,marginBottom:8,letterSpacing:2}}>{t.lCareers.toUpperCase()}</div>
-                        {(m.careers||[]).map((c,i)=><div key={i} style={{fontSize:12,color:G.muted,marginBottom:5,paddingLeft:8,borderLeft:"2px solid rgba(106,175,61,.25)",lineHeight:1.5}}>{c}</div>)}
+                        {(m.careers||[]).map((c,ci)=><div key={ci} style={{fontSize:12,color:G.muted,marginBottom:5,paddingLeft:8,borderLeft:"2px solid rgba(106,175,61,.25)",lineHeight:1.5}}>{c}</div>)}
                       </div>
                     </div>
                   </div>
                 );})()}
               </div>
 
-              {/* Course strategy */}
-              <div className="card">
-                <div className="sl">{t.lCourseStrat}</div>
-                <p style={{fontSize:13,color:G.text,lineHeight:1.9,marginBottom:16}}>{P.courses?.note}</p>
-                <div style={{fontSize:8,fontWeight:800,color:G.green,letterSpacing:2,marginBottom:10}}>{t.lApIb.toUpperCase()}</div>
-                {(P.courses?.apib||[]).map((c,i)=>(
-                  <div key={i} style={{display:"flex",gap:10,padding:"10px 14px",borderRadius:9,background:"rgba(106,175,61,.04)",border:"1px solid rgba(106,175,61,.1)",marginBottom:7,alignItems:"flex-start"}}>
-                    <span style={{color:G.green,fontWeight:800,fontSize:11,minWidth:18,flexShrink:0}}>{String(i+1).padStart(2,"0")}</span>
-                    <span style={{fontSize:13,color:G.text,lineHeight:1.65}}>{c}</span>
-                  </div>
-                ))}
+              {/* Learning style */}
+              <div className="card" style={{background:"rgba(106,175,61,.03)",borderColor:"rgba(106,175,61,.12)"}}>
+                <div className="sl">{t.lStyle}</div>
+                <p style={{fontSize:13,color:G.text,lineHeight:1.85}}>{P.academic?.learningStyle}</p>
               </div>
             </div>
           )}
 
-          {/* ═══ ACTIVITIES ═══ */}
-          {tab === "activities" && (
+          {/* ═══ TAB 3: GROWTH PATHWAY ═══ */}
+          {tab === "growth" && (
             <div className="anim-fade">
+
+              {/* Growth Direction Overview - teaser only */}
               <div className="card">
-                <div className="sl">{t.lEcAssess}</div>
-                <p style={{fontSize:13,color:G.text,lineHeight:1.9,marginBottom:14}}>{P.ec?.assessment}</p>
-                <div style={{padding:"12px 15px",borderRadius:10,background:"rgba(212,119,6,.05)",border:"1px solid rgba(212,119,6,.15)"}}>
-                  <div style={{fontSize:8,fontWeight:800,color:G.amber,letterSpacing:2,marginBottom:7}}>{t.lNarrative.toUpperCase()}</div>
-                  <p style={{fontSize:13,color:G.text,fontWeight:600,lineHeight:1.8}}>{P.ec?.narrative}</p>
+                <div className="sl">{t.lGrowthPath}</div>
+                <p style={{fontSize:13,color:G.muted,lineHeight:1.85,marginBottom:16,fontStyle:"italic"}}>{t.lGrowthTeaser}</p>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                  {(P.growth?.activities || (P.ec?.activities||[]).map(a=>a.type) || []).slice(0,4).map((act,i)=>(
+                    <div key={i} style={{padding:"12px 14px",borderRadius:10,background:"rgba(106,175,61,.04)",border:"1px solid rgba(106,175,61,.12)",fontSize:13,fontWeight:700,color:G.greenDk,display:"flex",alignItems:"center",gap:8,filter:i>=2?"blur(3px)":"none",userSelect:i>=2?"none":"auto"}}>
+                      <span style={{color:G.green,fontSize:14,flexShrink:0}}>◈</span>
+                      {i>=2 ? "···" : act}
+                    </div>
+                  ))}
                 </div>
-                {(P.ec?.gaps||[]).length>0 && (
-                  <div style={{display:"flex",gap:7,flexWrap:"wrap",marginTop:14,alignItems:"center"}}>
-                    <span style={{fontSize:10,color:G.muted,fontWeight:700}}>{t.lGaps}:</span>
-                    {P.ec.gaps.map((g,i)=><Pill key={i} color={G.rose}>⚠ {g}</Pill>)}
+                {/* Lock overlay hint */}
+                <div style={{marginTop:14,padding:"10px 14px",borderRadius:10,background:"rgba(26,58,42,.04)",border:"1px dashed rgba(26,58,42,.15)",display:"flex",alignItems:"center",gap:10}}>
+                  <span style={{fontSize:16}}>🔒</span>
+                  <span style={{fontSize:12,color:G.muted,lineHeight:1.6}}>{zh?"完整成长路径规划（项目创意、竞赛建议、背景提升方向）需预约1对1咨询后解锁。":"Full pathway plan (project ideas, competitions, activity strategy) unlocked after 1-on-1 consultation."}</span>
+                </div>
+              </div>
+
+              {/* Near-term Actions */}
+              <div className="card" style={{background:"rgba(106,175,61,.03)",borderColor:"rgba(106,175,61,.12)"}}>
+                <div className="sl">{t.lNextMonth}</div>
+                {(P.next?.month||[]).map((s,i)=>(
+                  <div key={i} style={{display:"flex",gap:10,marginBottom:8,alignItems:"flex-start"}}>
+                    <span style={{color:G.green,fontWeight:900,flexShrink:0,marginTop:2}}>→</span>
+                    <span style={{fontSize:13,lineHeight:1.7,color:G.text}}>{s}</span>
+                  </div>
+                ))}
+                {P.next?.key && (
+                  <div style={{marginTop:14,padding:"12px 15px",borderRadius:10,background:"rgba(106,175,61,.08)",border:"1px solid rgba(106,175,61,.2)"}}>
+                    <div style={{fontSize:9,fontWeight:800,color:G.green,letterSpacing:2,marginBottom:6}}>✦ {zh?"最关键":"KEY PRIORITY"}</div>
+                    <p style={{fontSize:13,fontWeight:700,color:G.greenDk,lineHeight:1.75}}>{P.next.key}</p>
                   </div>
                 )}
               </div>
 
-              {/* Recommended activities */}
-              <div className="card">
-                <div className="sl">{t.lRec}</div>
-                <div style={{display:"flex",gap:6,marginBottom:16,flexWrap:"wrap"}}>
-                  {(P.ec?.activities||[]).map((a,i)=>(
-                    <button key={i} className="tbtn" onClick={()=>setEcI(i)}
-                      style={{borderColor:ecI===i?`${G.amber}40`:"rgba(26,58,42,.08)",color:ecI===i?G.amber:"rgba(26,58,42,.35)",background:ecI===i?`${G.amber}09`:"transparent",fontSize:11}}>
-                      {a.type}
-                    </button>
+              {/* Gaps */}
+              {(P.ec?.gaps||[]).length>0 && (
+                <div className="card" style={{background:"rgba(225,29,72,.03)",borderColor:"rgba(225,29,72,.1)"}}>
+                  <div className="sl">{t.lGaps}</div>
+                  {P.ec.gaps.map((g,i)=>(
+                    <div key={i} style={{display:"flex",gap:8,marginBottom:6,alignItems:"flex-start"}}>
+                      <span style={{color:G.rose,fontWeight:900,flexShrink:0}}>⚠</span>
+                      <span style={{fontSize:13,color:G.text,lineHeight:1.7}}>{g}</span>
+                    </div>
                   ))}
                 </div>
-                {(P.ec?.activities||[])[ecI] && (()=>{const a=P.ec.activities[ecI];return(
-                  <div key={ecI} className="anim-fade" style={{borderRadius:12,border:"1px solid rgba(212,119,6,.15)",overflow:"hidden"}}>
-                    <div style={{padding:"15px 18px",borderBottom:"1px solid rgba(26,58,42,.05)"}}>
-                      <div style={{fontSize:8,fontWeight:800,color:G.amber,letterSpacing:2,marginBottom:7}}>{t.lAction.toUpperCase()}</div>
-                      <p style={{fontSize:14,fontWeight:700,color:G.greenDk,lineHeight:1.7}}>{a.action}</p>
-                    </div>
-                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr"}}>
-                      <div style={{padding:"12px 15px",borderRight:"1px solid rgba(26,58,42,.05)"}}>
-                        <div style={{fontSize:8,color:G.muted,fontWeight:800,marginBottom:6,letterSpacing:1}}>{t.lWhy.toUpperCase()}</div>
-                        <p style={{fontSize:12,color:G.muted,lineHeight:1.7}}>{a.why}</p>
-                      </div>
-                      <div style={{padding:"12px 15px"}}>
-                        <div style={{fontSize:8,color:G.muted,fontWeight:800,marginBottom:6,letterSpacing:1}}>{t.lTimeline.toUpperCase()}</div>
-                        <p style={{fontSize:12,color:G.muted,lineHeight:1.7}}>{a.when}</p>
-                      </div>
-                    </div>
-                  </div>
-                );})()}
-              </div>
+              )}
 
-              {/* Essay */}
-              <div className="card" style={{background:"rgba(124,58,237,.03)",borderColor:"rgba(124,58,237,.12)"}}>
-                <div className="sl">{t.lEssay}</div>
-                <p style={{fontSize:13,color:G.text,lineHeight:1.9,marginBottom:14}}>{P.essay?.coreNarrative}</p>
-                {(P.essay?.ideas||[]).map((d,i)=>(
-                  <div key={i} style={{display:"flex",gap:9,marginBottom:9,alignItems:"flex-start"}}>
-                    <span style={{color:G.purple,fontWeight:900,flexShrink:0}}>✦</span>
-                    <span style={{fontSize:13,color:G.text,lineHeight:1.75}}>{d}</span>
-                  </div>
-                ))}
-                <div style={{marginTop:14,padding:"12px 14px",borderRadius:10,background:"rgba(124,58,237,.06)",border:"1px solid rgba(124,58,237,.15)"}}>
-                  <div style={{fontSize:8,fontWeight:800,color:G.purple,letterSpacing:2,marginBottom:7}}>{t.lAngle.toUpperCase()}</div>
-                  <p style={{fontSize:13,color:G.text,fontWeight:600,lineHeight:1.75}}>{P.essay?.angle}</p>
-                </div>
+              {/* CTA */}
+              <div className="card" style={{background:G.greenDk,border:"none",textAlign:"center",padding:"32px 24px"}}>
+                <h3 style={{fontFamily:"'DM Serif Display',serif",fontSize:22,fontWeight:400,color:"#fff",marginBottom:10}}>{t.lCtaTitle}</h3>
+                <p style={{fontSize:13,color:"rgba(255,255,255,.55)",lineHeight:1.85,marginBottom:20,maxWidth:340,margin:"0 auto 20px"}}>{t.lCtaDesc}</p>
+                <button className="gbtn" onClick={()=>setTab("send")}
+                  style={{background:G.green,color:"#fff",padding:"13px 30px",fontSize:14,boxShadow:`0 6px 20px ${G.green}55`}}>
+                  {t.lCtaBtn}
+                </button>
               </div>
             </div>
           )}
@@ -1629,6 +1649,9 @@ export default function StarPathC() {
                       <div className="sl">{t.optStarwise.toUpperCase()}</div>
                       <input className="ifield" value={name||""} readOnly placeholder={t.namePH} style={{marginBottom:8,opacity:.6,background:"rgba(26,58,42,.03)"}}/>
                       <input className="ifield" value={email||""} readOnly placeholder={t.emailPH} style={{marginBottom:10,opacity:.6,background:"rgba(26,58,42,.03)"}}/>
+                      <input className="ifield" type="tel" value={parentPhone} onChange={e=>setParentPhone(e.target.value)}
+                        placeholder={t.parentPhonePH} style={{marginBottom:4}}/>
+                      <p style={{fontSize:11,color:G.green,marginBottom:10,fontWeight:600}}>📱 {t.parentPhone}</p>
                       <textarea className="ifield" rows={3} value={note} onChange={e=>setNote(e.target.value)}
                         placeholder={t.notePH} style={{resize:"none",lineHeight:1.75,marginBottom:14}}/>
                       <button className="gbtn" onClick={doSend} disabled={sending}
@@ -1645,6 +1668,9 @@ export default function StarPathC() {
                       <div className="sl">{t.optOwn.toUpperCase()}</div>
                       <input className="ifield" type="email" value={cEmail} onChange={e=>setCEmail(e.target.value)}
                         placeholder={t.counselorEmail} style={{marginBottom:10}}/>
+                      <input className="ifield" type="tel" value={parentPhone} onChange={e=>setParentPhone(e.target.value)}
+                        placeholder={t.parentPhonePH} style={{marginBottom:4}}/>
+                      <p style={{fontSize:11,color:G.green,marginBottom:10,fontWeight:600}}>📱 {t.parentPhone}</p>
                       <textarea className="ifield" rows={3} value={note} onChange={e=>setNote(e.target.value)}
                         placeholder={t.notePH} style={{resize:"none",lineHeight:1.75,marginBottom:14}}/>
                       <button className="gbtn" onClick={doSend} disabled={!cEmail.includes("@")||sending}
@@ -1733,7 +1759,7 @@ export default function StarPathC() {
           )}
 
           {/* ── Bottom restart (non-send tabs) ── */}
-          {tab !== "send" && (
+          {tab !== "send" && tab !== "growth" && (
             <div style={{textAlign:"center",marginTop:36,paddingTop:24,borderTop:"1px solid rgba(26,58,42,.06)"}}>
               <button className="gbtn" onClick={resetAll}
                 style={{background:"transparent",border:"2px solid rgba(26,58,42,.1)",color:"rgba(26,58,42,.28)",padding:"9px 22px",fontSize:12}}>
