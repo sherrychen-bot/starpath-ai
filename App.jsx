@@ -461,7 +461,7 @@ export default function StarPathC() {
         if (hash.startsWith('#id=')) {
           const id = hash.slice(4);
           try {
-            const res = await fetch('https://script.google.com/macros/s/AKfycbw6N7GDvJEBVJNsCiKaxvSz3NO15aXuvSZ1BF1gx6zlk9uR2sc31cl7rw2L55LMfpt4/exec?action=load&id=' + id);
+            const res = await fetch('https://script.google.com/macros/s/AKfycby092STDn5I6V6UJIbwLCrLjOD2KmG1RbM4kcFXUfg5-43cQKoQHbIu423kHMFcE2pv/exec?action=load&id=' + id);
             const json = await res.json();
             if (json.status === 'ok' && json.data && json.data.p) {
               setProfile(json.data.p);
@@ -624,7 +624,7 @@ export default function StarPathC() {
       parentPhone:   parentPhone || "",
     });
     const img = new Image();
-    img.src = "https://script.google.com/macros/s/AKfycbw6N7GDvJEBVJNsCiKaxvSz3NO15aXuvSZ1BF1gx6zlk9uR2sc31cl7rw2L55LMfpt4/exec?" + params.toString();
+    img.src = "https://script.google.com/macros/s/AKfycby092STDn5I6V6UJIbwLCrLjOD2KmG1RbM4kcFXUfg5-43cQKoQHbIu423kHMFcE2pv/exec?" + params.toString();
   };
 
   // Build plain-text report summary for clipboard / email
@@ -710,15 +710,28 @@ export default function StarPathC() {
       const zh2 = lang === "zh";
       const archetype = profile.snap?.archetype || profile.snap?.personality || "";
       const top1 = profile.majors?.[0]?.name || "";
-      // Encode full profile into URL
-      const payload = { p: profile, n: name, l: lang };
-      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
-        .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
-      const reportUrl = window.location.href.split('#')[0] + '#report=' + encoded;
-      // Build share message with REPORT link (not homepage)
+
+      // Save report to server and get short 8-char ID
+      const payload = JSON.stringify({ p: profile, n: name, l: lang });
+      const saveUrl = "https://script.google.com/macros/s/AKfycby092STDn5I6V6UJIbwLCrLjOD2KmG1RbM4kcFXUfg5-43cQKoQHbIu423kHMFcE2pv/exec?action=save&data=" + encodeURIComponent(payload);
+      const res = await fetch(saveUrl);
+      const reportId = (await res.text()).trim();
+
+      let reportUrl;
+      if (reportId && reportId.length === 8 && /^[a-f0-9]+$/i.test(reportId)) {
+        // Got short ID — use it
+        reportUrl = window.location.href.split('#')[0] + '#id=' + reportId;
+      } else {
+        // Fallback: encode in URL
+        const encoded = btoa(unescape(encodeURIComponent(payload)))
+          .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+        reportUrl = window.location.href.split('#')[0] + '#report=' + encoded;
+      }
+
       const msg = zh2
         ? `嗨！我刚完成了星途潜能测评 🌟\n\n我的成长原型是「${archetype}」，最匹配的方向是 ${top1}。\n\n点击查看我的完整成长报告 👇\n${reportUrl}`
         : `Hey! I just completed the StarPath Finder assessment 🌟\n\nMy archetype is "${archetype}" and top match is ${top1}.\n\nView my full report here 👇\n${reportUrl}`;
+
       navigator.clipboard.writeText(msg).then(()=>{
         setShareCopied(true); setTimeout(()=>setShareCopied(false),3000);
       }).catch(()=>{
@@ -729,7 +742,7 @@ export default function StarPathC() {
         setShareCopied(true);setTimeout(()=>setShareCopied(false),3000);
       });
     } catch(e) { console.error(e); } finally { setShareLoading(false); }
-  };;;
+  };;;;
 
   const downloadPDF = () => {
     if (!profile) return;
@@ -811,200 +824,205 @@ export default function StarPathC() {
 <meta charset="UTF-8"/>
 <title>${docTitle}</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Playfair+Display:ital@0;1&display=swap');
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
-  @page{margin:14mm 16mm;size:A4;}
-  .no-break{break-inside:avoid;page-break-inside:avoid;}
-  .page-break{page-break-before:always;}
-  .page{max-width:100%;}
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Playfair+Display:ital@0;1&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
+@page{margin:${zh?'11mm 13mm':'12mm 15mm'};size:A4;}
 
-  /* Header */
-  .header{background:#1A3A2A;padding:14px 28px;display:flex;align-items:center;gap:14px;}
-  .logo{width:36px;height:36px;flex-shrink:0;}
-  .brand{font-size:14px;font-weight:800;letter-spacing:3px;color:#fff;}
-  .header-right{margin-left:auto;text-align:right;}
-  .report-date{font-size:9px;color:rgba(255,255,255,.4);letter-spacing:1px;}
+/* HEADER */
+.header{background:#1A3A2A;padding:11px 22px;display:flex;align-items:center;gap:11px;}
+.logo{width:30px;height:30px;flex-shrink:0;}
+.brand{font-size:12px;font-weight:800;letter-spacing:3px;color:#fff;flex:1;}
+.report-date{font-size:8px;color:rgba(255,255,255,.4);letter-spacing:1px;}
 
-  /* Hero */
-  .hero{padding:10px 28px 10px;background:linear-gradient(180deg,rgba(106,175,61,.06) 0%,#fff 100%);border-bottom:2px solid #EAF2E5;}
-  .archetype-badge{display:inline-block;padding:3px 12px;border-radius:20px;background:rgba(106,175,61,.12);border:1px solid rgba(106,175,61,.3);font-size:9px;font-weight:800;color:#2D5A3D;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
-  .student-meta{font-size:10px;color:#6AAF3D;font-weight:700;letter-spacing:1px;margin-bottom:6px;}
-  .personality{font-family:'Playfair Display',serif;font-size:26px;color:#1A3A2A;margin-bottom:6px;line-height:1.2;}
-  .tagline{font-size:12px;color:#6B7B6B;line-height:1.8;margin-bottom:10px;}
-  .pills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;}
-  .pill{padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;background:rgba(106,175,61,.1);border:1px solid rgba(106,175,61,.25);color:#2D5A3D;}
-  .motivation{font-size:10px;color:#6B7B6B;line-height:1.7;font-style:italic;}
+/* HERO */
+.hero{padding:${zh?'10px 22px 9px':'12px 22px 10px'};border-bottom:2px solid #EAF2E5;}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;background:rgba(106,175,61,.1);border:1px solid rgba(106,175,61,.28);font-size:${zh?'8px':'7.5px'};font-weight:800;color:#2D5A3D;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:${zh?'4px':'5px'};}
+.meta{font-size:9px;color:#6AAF3D;font-weight:700;letter-spacing:1px;margin-bottom:3px;}
+.personality{font-family:'Playfair Display',serif;font-size:${zh?'19px':'18px'};color:#1A3A2A;margin-bottom:4px;line-height:1.2;}
+.tagline{font-size:${zh?'10px':'9.5px'};color:#6B7B6B;line-height:${zh?'1.65':'1.7'};margin-bottom:3px;}
+.motivation{font-size:${zh?'9.5px':'9px'};color:#6B7B6B;font-style:italic;line-height:1.55;}
 
-  /* Sections */
-  .section{padding:10px 28px;border-bottom:1px solid #EAF2E5;break-inside:avoid;page-break-inside:avoid;}
-  .section-2col{padding:14px 28px;border-bottom:1px solid #EAF2E5;display:grid;grid-template-columns:1fr 1fr;gap:16px;break-inside:avoid;}
-  .sec-label{font-size:7px;letter-spacing:3px;text-transform:uppercase;color:#6AAF3D;font-weight:800;margin-bottom:10px;}
-  .body-text{font-size:11px;line-height:1.85;color:#1E2B1E;}
-  .highlight{background:#F5F9F3;border-left:3px solid #6AAF3D;padding:10px 14px;margin-top:10px;font-size:11px;line-height:1.8;color:#1E2B1E;}
-  .card{background:#F5F9F3;border-radius:8px;padding:12px 14px;}
-  .card-label{font-size:7px;letter-spacing:2px;text-transform:uppercase;color:#6B7B6B;font-weight:700;margin-bottom:5px;}
+/* SECTIONS */
+.S{padding:${zh?'8px 22px':'9px 22px'};border-bottom:1px solid #EAF2E5;break-inside:avoid;page-break-inside:avoid;}
+.lbl{font-size:7px;letter-spacing:2.5px;text-transform:uppercase;color:#6AAF3D;font-weight:800;margin-bottom:7px;}
+.body{font-size:${zh?'10.5px':'10px'};line-height:${zh?'1.8':'1.85'};color:#1E2B1E;}
+.hi{background:#F5F9F3;border-left:3px solid #6AAF3D;padding:7px 11px;margin-top:7px;font-size:${zh?'10px':'9.5px'};line-height:1.75;color:#1E2B1E;border-radius:0 5px 5px 0;}
 
-  /* Strengths */
-  .strength-item{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid rgba(26,58,42,.05);align-items:flex-start;}
-  .strength-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;font-weight:900;}
-  .strength-name{font-size:11px;font-weight:800;color:#1A3A2A;margin-bottom:2px;}
-  .strength-desc{font-size:10px;color:#6B7B6B;line-height:1.6;}
+/* RADAR + STRENGTHS — Chinese: side by side, English: radar full then strengths */
+.rc{display:grid;grid-template-columns:${zh?'185px 1fr':'175px 1fr'};gap:14px;padding:${zh?'8px 22px':'9px 22px'};border-bottom:1px solid #EAF2E5;break-inside:avoid;page-break-inside:avoid;align-items:start;}
+.sr{display:flex;gap:7px;padding:4px 0;border-bottom:1px solid rgba(26,58,42,.05);align-items:flex-start;}
+.si{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;font-weight:900;}
+.sn{font-size:${zh?'10px':'9.5px'};font-weight:800;color:#1A3A2A;margin-bottom:1px;}
+.sd{font-size:${zh?'9px':'8.5px'};color:#6B7B6B;line-height:1.5;}
+.gbox{padding:7px 9px;background:rgba(212,119,6,.04);border-radius:5px;border:1px solid rgba(212,119,6,.1);font-size:${zh?'9.5px':'9px'};color:#6B7B6B;line-height:1.6;margin-top:7px;}
 
-  /* Activity */
-  .activity-item{padding:8px 12px;background:#F5F9F3;border-radius:7px;margin-bottom:7px;}
-  .activity-type{font-size:8px;font-weight:800;color:#D97706;letter-spacing:1px;margin-bottom:3px;}
-  .activity-action{font-size:11px;font-weight:700;color:#1A3A2A;margin-bottom:2px;}
-  .activity-when{font-size:10px;color:#6B7B6B;}
+/* 2-COL EQUAL */
+.eq2{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:${zh?'8px 22px':'9px 22px'};border-bottom:1px solid #EAF2E5;break-inside:avoid;page-break-inside:avoid;}
+.di{padding:4px 7px;border-radius:5px;background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.12);font-size:${zh?'10px':'9.5px'};font-weight:700;color:#1A3A2A;display:flex;align-items:center;gap:5px;margin-bottom:3px;}
+.br{margin-bottom:5px;}
+.bl{font-size:${zh?'10px':'9.5px'};font-weight:700;color:#1A3A2A;margin-bottom:2px;}
+.bt{height:4px;border-radius:2px;background:rgba(26,58,42,.07);overflow:hidden;}
+.bf{height:100%;border-radius:2px;}
+.bp{font-size:8.5px;font-weight:800;color:#6AAF3D;text-align:right;margin-top:1px;}
 
-  /* Actions */
-  .arrow-item{display:flex;gap:6px;margin-bottom:5px;align-items:flex-start;}
-  .arrow{color:#6AAF3D;font-weight:900;flex-shrink:0;font-size:12px;}
+/* ACTIONS */
+.ar{display:flex;gap:5px;margin-bottom:4px;align-items:flex-start;}
+.aw{color:#6AAF3D;font-weight:900;font-size:10px;flex-shrink:0;margin-top:1px;}
+.kb{background:rgba(106,175,61,.07);border:1px solid rgba(106,175,61,.18);border-radius:5px;padding:6px 9px;margin-top:6px;}
+.kl{font-size:6.5px;font-weight:800;color:#6AAF3D;letter-spacing:2px;margin-bottom:3px;}
+.kt{font-size:${zh?'10px':'9.5px'};font-weight:700;color:#1A3A2A;line-height:1.6;}
 
-  /* Footer */
-  .footer{padding:14px 28px;background:#F5F9F3;display:flex;align-items:center;justify-content:space-between;}
-  .footer-brand{font-size:10px;font-weight:800;color:#1A3A2A;letter-spacing:2px;}
-  .footer-date{font-size:9px;color:#6B7B6B;}
-  .footer-page{font-size:9px;color:#6B7B6B;}
+/* COUNSELOR */
+.cb{background:#1A3A2A;border-radius:7px;padding:9px 13px;}
+.cl{font-size:6.5px;font-weight:800;color:#82C455;letter-spacing:2px;margin-bottom:4px;}
+.ct{font-size:${zh?'10px':'9.5px'};color:rgba(255,255,255,.8);line-height:1.75;}
 
-  /* Growth direction */
-  .direction-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px;}
-  .direction-item{padding:8px 12px;border-radius:8px;background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.15);font-size:11px;font-weight:700;color:#1A3A2A;display:flex;align-items:center;gap:7px;}
-  .direction-dot{color:#3B82F6;font-size:13px;}
-
-  /* Key priority box */
-  .key-box{background:rgba(106,175,61,.07);border:1px solid rgba(106,175,61,.2);border-radius:8px;padding:8px 12px;margin-top:8px;}
-  .key-label{font-size:7px;font-weight:800;color:#6AAF3D;letter-spacing:2px;margin-bottom:5px;}
-  .key-text{font-size:12px;font-weight:700;color:#1A3A2A;line-height:1.7;}
-
-  /* Counselor section */
-  .counselor-box{background:#1A3A2A;border-radius:10px;padding:12px 16px;}
-  .counselor-label{font-size:7px;font-weight:800;color:#82C455;letter-spacing:2px;margin-bottom:7px;}
-  .counselor-text{font-size:11px;color:rgba(255,255,255,.8);line-height:1.8;}
+.footer{padding:9px 22px;background:#F5F9F3;display:flex;align-items:center;justify-content:space-between;}
+.fb{font-size:9px;font-weight:800;color:#1A3A2A;letter-spacing:2px;}
+.fi{font-size:7.5px;color:#6B7B6B;}
 </style>
 </head>
 <body>
-<div class="page">
 
-  <!-- HEADER -->
-  <div class="header">
-    <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="50" cy="50" r="50" fill="#6AAF3D"/>
-      <polygon points="50,20 84,35 50,50 16,35" fill="white"/>
-      <path d="M30,40 L30,59 C30,68 39,74 50,74 C61,74 70,68 70,59 L70,40 L50,50 Z" fill="white"/>
-      <rect x="80" y="35" width="3.5" height="22" rx="1.5" fill="white"/>
-      <polygon points="81.5,60 84,66 90,66 85,70 87,76 81.5,72 76,76 78,70 73,66 79,66" fill="white"/>
-    </svg>
-    <div class="brand">STARPATH FINDER</div>
-    <div class="header-right">
-      <div class="report-date">${zh?"星途成长报告":"Growth Profile Report"} · ${new Date().toLocaleDateString(zh?'zh-CN':'en-US')}</div>
-    </div>
-  </div>
-
-  <!-- HERO -->
-  <div class="hero">
-    ${P.snap?.archetype ? `<div class="archetype-badge">${P.snap.archetype}</div>` : ''}
-    ${name ? `<div class="student-meta">${name} · ${t.grade(P.snap?.grade||'')} · ${t.school(P.snap?.schoolType||'')}</div>` : ''}
-    <div class="personality">${P.snap?.personality||''}</div>
-    <div class="tagline">${P.snap?.tagline||''}</div>
-    <div class="motivation">${P.snap?.motivation||''}</div>
-  </div>
-
-  <!-- SECTION 1: RADAR + STRENGTHS (2 col) -->
-  <div class="section-2col">
-    <div>
-      <div class="sec-label">${zh?"五维能力画像":"Capability Profile"}</div>
-      ${radarSVG}
-    </div>
-    <div>
-      <div class="sec-label">${zh?"三大核心优势":"Core Strengths"}</div>
-      ${strengths.map((s,i) => `
-        <div class="strength-item">
-          <div class="strength-icon" style="background:${['rgba(106,175,61,.12)','rgba(59,130,246,.12)','rgba(212,119,6,.12)'][i%3]};color:${['#6AAF3D','#3B82F6','#D97706'][i%3]};">${['✦','◈','◉'][i]}</div>
-          <div>
-            <div class="strength-name">${s.name||s}</div>
-            <div class="strength-desc">${s.desc||''}</div>
-          </div>
-        </div>`).join('')}
-      <div style="margin-top:14px;">
-        <div class="sec-label">${zh?"成长提示":"Growth Area"}</div>
-        <div style="font-size:11px;color:#6B7B6B;line-height:1.7;padding:10px 12px;background:rgba(212,119,6,.04);border-radius:8px;border:1px solid rgba(212,119,6,.12);">${P.summary?.watchOut||''}</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SECTION 2: KEY INSIGHT -->
-  <div class="section">
-    <div class="sec-label">${zh?"核心洞察":"Key Insight"}</div>
-    <div class="body-text">${P.summary?.headline||''}</div>
-    <div class="highlight">${P.summary?.keyInsight||''}</div>
-  </div>
-
-  <!-- SECTION 3: ACADEMIC DIRECTIONS + MAJOR MATCHES (2 col) -->
-  <div class="section-2col">
-    <div>
-      <div class="sec-label">${zh?"潜在学术方向":"Academic Directions"}</div>
-      <div class="direction-grid">
-        ${(P.academic?.directions||P.academic?.domains||[]).map(d=>`
-          <div class="direction-item"><span class="direction-dot">◈</span>${d}</div>`).join('')}
-      </div>
-    </div>
-    <div>
-      <div class="sec-label">${zh?"专业方向匹配":"Major Matches"}</div>
-      ${barSVG}
-    </div>
-  </div>
-
-  <!-- SECTION 4: ACTION PLAN -->
-  <div class="section">
-    <div class="sec-label">${zh?"近期行动计划":"Action Plan"}</div>
-    ${(P.next?.month||[]).map(s=>`<div class="arrow-item"><span class="arrow">→</span><span style="font-size:11px;line-height:1.7;color:#1E2B1E;">${s}</span></div>`).join('')}
-    ${P.next?.key ? `<div class="key-box"><div class="key-label">✦ ${zh?"最关键一步":"KEY PRIORITY"}</div><div class="key-text">${P.next.key}</div></div>` : ''}
-  </div>
-
-  <!-- SECTION 5: COUNSELOR NOTE -->
-  <div class="section">
-    <div class="sec-label">${zh?"顾问专属备注":"Counselor Note"}</div>
-    <div class="counselor-box">
-      <div class="counselor-label">${zh?"学生画像摘要":"STUDENT PROFILE SUMMARY"}</div>
-      <div class="counselor-text">${P.summary?.counselorNote||''}</div>
-    </div>
-  </div>
-
-  <!-- FOOTER -->
-  <div class="footer">
-    <div class="footer-brand">STARPATH FINDER</div>
-    <div class="footer-date">${new Date().toLocaleDateString(zh?'zh-CN':'en-US')}</div>
-    <div class="footer-page">Generated by StarWise International · +1 (626) 725-6474</div>
-  </div>
-
+<div class="header">
+  <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="50" fill="#6AAF3D"/>
+    <polygon points="50,20 84,35 50,50 16,35" fill="white"/>
+    <path d="M30,40 L30,59 C30,68 39,74 50,74 C61,74 70,68 70,59 L70,40 L50,50 Z" fill="white"/>
+    <rect x="80" y="35" width="3.5" height="22" rx="1.5" fill="white"/>
+    <polygon points="81.5,60 84,66 90,66 85,70 87,76 81.5,72 76,76 78,70 73,66 79,66" fill="white"/>
+  </svg>
+  <div class="brand">STARPATH FINDER</div>
+  <div class="report-date">${zh?"星途成长报告":"Growth Profile Report"} · ${new Date().toLocaleDateString(zh?'zh-CN':'en-US')}</div>
 </div>
-<div id="pbar" style="position:fixed;bottom:0;left:0;right:0;background:#1A3A2A;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;z-index:999;">
-  <span style="color:rgba(255,255,255,.55);font-size:12px;font-family:sans-serif;">${docTitle}</span>
-  <div style="display:flex;gap:8px;">
-    <button onclick="window.print()" style="background:#6AAF3D;color:#fff;border:none;border-radius:8px;padding:9px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif;">${zh?'下载 / 打印 PDF':'Download / Print PDF'}</button>
-    <button onclick="document.getElementById('pbar').style.display='none'" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);border:none;border-radius:8px;padding:9px 14px;font-size:12px;cursor:pointer;font-family:sans-serif;">✕</button>
+
+<div class="hero">
+  ${P.snap?.archetype?`<div class="badge">${P.snap.archetype}</div>`:''}
+  ${name?`<div class="meta">${name} · ${t.grade(P.snap?.grade||'')} · ${t.school(P.snap?.schoolType||'')}</div>`:''}
+  <div class="personality">${P.snap?.personality||''}</div>
+  <div class="tagline">${P.snap?.tagline||''}</div>
+  <div class="motivation">${P.snap?.motivation||''}</div>
+</div>
+
+<!-- RADAR + STRENGTHS -->
+<div class="rc">
+  <div>
+    <div class="lbl">${zh?"五维能力画像":"Capability Profile"}</div>
+    ${(()=>{
+      const W=zh?175:165, H=zh?185:175;
+      const cx=W/2, cy=H/2-5, r=zh?68:62;
+      const items=radarData, n=items.length;
+      const angle=(i)=>(Math.PI*2*i/n)-Math.PI/2;
+      const pt=(i,s)=>[cx+Math.cos(angle(i))*r*s, cy+Math.sin(angle(i))*r*s];
+      const rings=[0.33,0.67,1].map(s=>items.map((_,i)=>pt(i,s)).map((p,i)=>`${i===0?'M':'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ')+'Z');
+      const poly=items.map((d,i)=>pt(i,d.val/100)).map((p,i)=>`${i===0?'M':'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ')+'Z';
+      const axes=items.map((_,i)=>{const[x,y]=pt(i,1);return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(26,58,42,0.1)" stroke-width="0.8"/>`;});
+      const dots=items.map((d,i)=>{const[x,y]=pt(i,d.val/100);return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" fill="#6AAF3D" stroke="white" stroke-width="1.2"/>`;});
+      const lblSize=zh?8:7.5;
+      const lblScale=1.42;
+      const labels=items.map((d,i)=>{
+        const[x,y]=pt(i,lblScale);
+        const anchor=x<cx-5?'end':x>cx+5?'start':'middle';
+        return `<text x="${x.toFixed(1)}" y="${(y-4).toFixed(1)}" text-anchor="${anchor}" font-size="${lblSize}" font-weight="700" fill="rgba(26,58,42,0.5)" font-family="sans-serif">${d.label}</text>
+                <text x="${x.toFixed(1)}" y="${(y+7).toFixed(1)}" text-anchor="${anchor}" font-size="${lblSize+1.5}" font-weight="800" fill="#6AAF3D" font-family="sans-serif">${d.val}</text>`;
+      });
+      return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+        <defs><radialGradient id="rg3"><stop offset="0%" stop-color="#6AAF3D" stop-opacity="0.18"/><stop offset="100%" stop-color="#6AAF3D" stop-opacity="0.03"/></radialGradient></defs>
+        ${rings.map(d=>`<path d="${d}" fill="none" stroke="rgba(26,58,42,0.07)" stroke-width="0.8"/>`).join('')}
+        ${axes.join('')}
+        <path d="${poly}" fill="url(#rg3)" stroke="#6AAF3D" stroke-width="1.5"/>
+        ${dots.join('')}${labels.join('')}
+      </svg>`;
+    })()}
+  </div>
+  <div>
+    <div class="lbl">${zh?"三大核心优势":"Core Strengths"}</div>
+    ${strengths.map((s,i)=>`
+      <div class="sr">
+        <div class="si" style="background:${['rgba(106,175,61,.12)','rgba(59,130,246,.12)','rgba(212,119,6,.12)'][i%3]};color:${['#6AAF3D','#3B82F6','#D97706'][i%3]};">${['✦','◈','◉'][i]}</div>
+        <div><div class="sn">${s.name||s}</div><div class="sd">${s.desc||''}</div></div>
+      </div>`).join('')}
+    <div class="lbl" style="margin-top:9px;">${zh?"成长提示":"Growth Area"}</div>
+    <div class="gbox">${P.summary?.watchOut||''}</div>
   </div>
 </div>
-<style>@media print{#pbar{display:none!important;}}body{padding-bottom:56px;}</style>
+
+<!-- KEY INSIGHT -->
+<div class="S">
+  <div class="lbl">${zh?"核心洞察":"Key Insight"}</div>
+  <div class="body">${P.summary?.headline||''}</div>
+  <div class="hi">${P.summary?.keyInsight||''}</div>
+</div>
+
+<!-- ACADEMIC DIRECTIONS + MAJOR MATCHES -->
+<div class="eq2">
+  <div>
+    <div class="lbl">${zh?"潜在学术方向":"Academic Directions"}</div>
+    ${(P.academic?.directions||P.academic?.domains||[]).map(d=>`<div class="di"><span style="color:#3B82F6;font-size:9px;">◈</span>${d}</div>`).join('')}
+  </div>
+  <div>
+    <div class="lbl">${zh?"专业方向匹配":"Major Matches"}</div>
+    ${(P.majors||[]).map(m=>`
+      <div class="br">
+        <div class="bl">${m.name}</div>
+        <div class="bt"><div class="bf" style="width:${m.fit}%;background:${m.fit>=85?'#6AAF3D':m.fit>=75?'#82C455':'#A3C97A'};"></div></div>
+        <div class="bp">${m.fit}%</div>
+      </div>`).join('')}
+  </div>
+</div>
+
+<!-- ACTION PLAN -->
+<div class="S">
+  <div class="lbl">${zh?"近期行动计划":"Action Plan"}</div>
+  ${(P.next?.month||[]).map(s=>`<div class="ar"><span class="aw">→</span><span style="font-size:${zh?'10px':'9.5px'};line-height:1.7;color:#1E2B1E;">${s}</span></div>`).join('')}
+  ${P.next?.key?`<div class="kb"><div class="kl">✦ ${zh?"最关键一步":"KEY PRIORITY"}</div><div class="kt">${P.next.key}</div></div>`:''}
+</div>
+
+<!-- COUNSELOR NOTE -->
+<div class="S">
+  <div class="lbl">${zh?"顾问专属备注":"Counselor Note"}</div>
+  <div class="cb">
+    <div class="cl">${zh?"学生画像摘要":"STUDENT PROFILE SUMMARY"}</div>
+    <div class="ct">${P.summary?.counselorNote||''}</div>
+  </div>
+</div>
+
+<div class="footer">
+  <div class="fb">STARPATH FINDER</div>
+  <div class="fi">Generated by StarWise International · +1 (626) 725-6474 · ${new Date().toLocaleDateString(zh?'zh-CN':'en-US')}</div>
+</div>
+
+<div id="pbar" style="position:fixed;bottom:0;left:0;right:0;background:#1A3A2A;padding:9px 20px;display:flex;align-items:center;justify-content:space-between;z-index:999;">
+  <span style="color:rgba(255,255,255,.5);font-size:10px;font-family:sans-serif;">${docTitle}</span>
+  <div style="display:flex;gap:7px;">
+    <button onclick="window.print()" style="background:#6AAF3D;color:#fff;border:none;border-radius:6px;padding:7px 18px;font-size:11px;font-weight:700;cursor:pointer;font-family:sans-serif;">${zh?'下载 / 打印 PDF':'Download / Print PDF'}</button>
+    <button onclick="document.getElementById('pbar').style.display='none'" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);border:none;border-radius:6px;padding:7px 11px;font-size:11px;cursor:pointer;font-family:sans-serif;">✕</button>
+  </div>
+</div>
+<style>@media print{#pbar{display:none!important;}}body{padding-bottom:48px;}</style>
 <script>document.title="${docTitle}";</script>
 </body></html>`;
 
-    // Open report in new tab with print button
-    const blob = new Blob([html], {type:'text/html'});
+    // Use blob URL but keep reference alive via hidden iframe
+    const blob = new Blob([html], {type: 'text/html;charset=utf-8'});
     const url = URL.createObjectURL(blob);
-    const win = window.open(url, '_blank');
-    if (!win) {
-      // Popup blocked fallback - direct download
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = docTitle + '.html';
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
-    setTimeout(() => { URL.revokeObjectURL(url); setDownloading(false); }, 2000);
+    // Store URL on window so it's not GC'd
+    window._starpathReportUrl = url;
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    // Revoke after 60s
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      delete window._starpathReportUrl;
+    }, 60000);
+    setDownloading(false);
   };
 
   const resetAll = () => {
