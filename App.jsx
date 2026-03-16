@@ -456,8 +456,10 @@ export default function StarPathC() {
     try {
       const hash = window.location.hash;
       if (!hash.startsWith('#report=')) return;
-      const encoded = hash.slice(8);
-      const payload = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+      // Restore URL-safe base64 back to standard base64
+      const raw = hash.slice(8).replace(/-/g, '+').replace(/_/g, '/');
+      const padded = raw + '='.repeat((4 - raw.length % 4) % 4);
+      const payload = JSON.parse(decodeURIComponent(escape(atob(padded))));
       if (payload.p) {
         setProfile(payload.p);
         if (payload.n) setName(payload.n);
@@ -603,7 +605,7 @@ export default function StarPathC() {
       counselorNote: P.summary?.counselorNote || "",
       parentPhone:   parentPhone || "",
     });
-    fetch("https://script.google.com/a/macros/foodprintai.com/s/AKfycbwb0wxPhfAGTK1JkrCv0oMBCFNZ0mdS4TLeUHK-_7gaDSagdkED8OQOiZZBF6VhemlK/exec", {
+    fetch("https://script.google.com/macros/s/AKfycbw4C09QEc_ro1jiroGGNhaPhywldEpquFsqifSpsaSQWf1b1mumaN840AbjCvJEiD9W/exec", {
       method: "POST",
       mode: "no-cors",
       headers: {"Content-Type": "text/plain"},
@@ -704,7 +706,9 @@ export default function StarPathC() {
         },
         n: name, l: lang
       };
-      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+      // URL-safe base64: replace + with -, / with _, remove =
+      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
       const reportUrl = window.location.href.split('#')[0] + '#report=' + encoded;
       navigator.clipboard.writeText(reportUrl).then(()=>{
         setShareCopied(true); setTimeout(()=>setShareCopied(false),3000);
@@ -807,17 +811,19 @@ export default function StarPathC() {
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
   @page{margin:14mm 16mm;size:A4;}
+  .no-break{break-inside:avoid;page-break-inside:avoid;}
+  .page-break{page-break-before:always;}
   .page{max-width:100%;}
 
   /* Header */
-  .header{background:#1A3A2A;padding:20px 28px;display:flex;align-items:center;gap:14px;}
+  .header{background:#1A3A2A;padding:14px 28px;display:flex;align-items:center;gap:14px;}
   .logo{width:36px;height:36px;flex-shrink:0;}
   .brand{font-size:14px;font-weight:800;letter-spacing:3px;color:#fff;}
   .header-right{margin-left:auto;text-align:right;}
   .report-date{font-size:9px;color:rgba(255,255,255,.4);letter-spacing:1px;}
 
   /* Hero */
-  .hero{padding:14px 28px 12px;background:linear-gradient(180deg,rgba(106,175,61,.06) 0%,#fff 100%);border-bottom:2px solid #EAF2E5;}
+  .hero{padding:10px 28px 10px;background:linear-gradient(180deg,rgba(106,175,61,.06) 0%,#fff 100%);border-bottom:2px solid #EAF2E5;}
   .archetype-badge{display:inline-block;padding:3px 12px;border-radius:20px;background:rgba(106,175,61,.12);border:1px solid rgba(106,175,61,.3);font-size:9px;font-weight:800;color:#2D5A3D;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
   .student-meta{font-size:10px;color:#6AAF3D;font-weight:700;letter-spacing:1px;margin-bottom:6px;}
   .personality{font-family:'Playfair Display',serif;font-size:26px;color:#1A3A2A;margin-bottom:6px;line-height:1.2;}
@@ -827,7 +833,7 @@ export default function StarPathC() {
   .motivation{font-size:10px;color:#6B7B6B;line-height:1.7;font-style:italic;}
 
   /* Sections */
-  .section{padding:14px 28px;border-bottom:1px solid #EAF2E5;break-inside:avoid;}
+  .section{padding:10px 28px;border-bottom:1px solid #EAF2E5;break-inside:avoid;page-break-inside:avoid;}
   .section-2col{padding:14px 28px;border-bottom:1px solid #EAF2E5;display:grid;grid-template-columns:1fr 1fr;gap:16px;break-inside:avoid;}
   .sec-label{font-size:7px;letter-spacing:3px;text-transform:uppercase;color:#6AAF3D;font-weight:800;margin-bottom:10px;}
   .body-text{font-size:11px;line-height:1.85;color:#1E2B1E;}
@@ -836,7 +842,7 @@ export default function StarPathC() {
   .card-label{font-size:7px;letter-spacing:2px;text-transform:uppercase;color:#6B7B6B;font-weight:700;margin-bottom:5px;}
 
   /* Strengths */
-  .strength-item{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid rgba(26,58,42,.05);align-items:flex-start;}
+  .strength-item{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid rgba(26,58,42,.05);align-items:flex-start;}
   .strength-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;font-weight:900;}
   .strength-name{font-size:11px;font-weight:800;color:#1A3A2A;margin-bottom:2px;}
   .strength-desc{font-size:10px;color:#6B7B6B;line-height:1.6;}
@@ -848,7 +854,7 @@ export default function StarPathC() {
   .activity-when{font-size:10px;color:#6B7B6B;}
 
   /* Actions */
-  .arrow-item{display:flex;gap:8px;margin-bottom:7px;align-items:flex-start;}
+  .arrow-item{display:flex;gap:6px;margin-bottom:5px;align-items:flex-start;}
   .arrow{color:#6AAF3D;font-weight:900;flex-shrink:0;font-size:12px;}
 
   /* Footer */
@@ -863,12 +869,12 @@ export default function StarPathC() {
   .direction-dot{color:#3B82F6;font-size:13px;}
 
   /* Key priority box */
-  .key-box{background:rgba(106,175,61,.07);border:1px solid rgba(106,175,61,.2);border-radius:8px;padding:12px 14px;margin-top:12px;}
+  .key-box{background:rgba(106,175,61,.07);border:1px solid rgba(106,175,61,.2);border-radius:8px;padding:8px 12px;margin-top:8px;}
   .key-label{font-size:7px;font-weight:800;color:#6AAF3D;letter-spacing:2px;margin-bottom:5px;}
   .key-text{font-size:12px;font-weight:700;color:#1A3A2A;line-height:1.7;}
 
   /* Counselor section */
-  .counselor-box{background:#1A3A2A;border-radius:10px;padding:16px 18px;}
+  .counselor-box{background:#1A3A2A;border-radius:10px;padding:12px 16px;}
   .counselor-label{font-size:7px;font-weight:800;color:#82C455;letter-spacing:2px;margin-bottom:7px;}
   .counselor-text{font-size:11px;color:rgba(255,255,255,.8);line-height:1.8;}
 </style>
@@ -1067,8 +1073,7 @@ export default function StarPathC() {
         <div style={{width:64,height:64,borderRadius:"50%",overflow:"hidden",boxShadow:`0 14px 36px ${G.green}45`}}><StarWiseLogo size={64}/></div>
       </div>
 
-      <p style={{fontSize:10,letterSpacing:4,color:G.green,fontWeight:800,marginBottom:2,textTransform:"uppercase"}}>{t.brand}</p>
-      <p style={{fontSize:9,letterSpacing:2,color:G.sage,fontWeight:700,marginBottom:22,opacity:.7}}>{t.byLine}</p>
+      <p style={{fontSize:10,letterSpacing:4,color:G.green,fontWeight:800,marginBottom:22,textTransform:"uppercase"}}>{t.brand}</p>
       
 
       <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(28px,5.5vw,52px)",fontWeight:400,textAlign:"center",lineHeight:1.18,marginBottom:14,color:G.greenDk}}>
