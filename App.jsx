@@ -744,7 +744,7 @@ export default function StarPathC() {
     const top1 = profile.majors?.[0]?.name || "";
     const baseUrl = window.location.href.split('#')[0].split('?')[0];
 
-    // 保存完整报告到 GAS → 返回 8 字符 ID → 链接约 50 字符
+    // 保存完整报告到 GAS → 返回 8 字符 ID → 链接约 42 字符
     let reportUrl;
     try {
       const payload = JSON.stringify({ p: profile, n: name, l: lang });
@@ -753,7 +753,7 @@ export default function StarPathC() {
       if (json.ok && json.id) {
         reportUrl = baseUrl + '#id=' + json.id;
       } else {
-        throw new Error('保存失败');
+        throw new Error('no id');
       }
     } catch(e) {
       setShareLoading(false);
@@ -765,40 +765,10 @@ export default function StarPathC() {
       ? '我的星途成长报告 🌟\n成长原型：「' + archetype + '」｜最匹配方向：' + top1 + '\n\n👇 点击查看完整报告\n' + reportUrl
       : 'My StarPath Report 🌟\nArchetype: ' + archetype + ' | Top match: ' + top1 + '\n\n👇 View full report\n' + reportUrl;
 
-    // 尝试写剪贴板，失败时显示页面内弹窗（手机友好，带复制按钮）
-    const doCopy = (text, onSuccess) => {
-      // 方法1: execCommand（同步，Safari 桌面/旧版支持）
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.setAttribute('readonly', '');
-      ta.style.cssText = 'position:fixed;top:0;left:0;width:2em;height:2em;opacity:0;';
-      document.body.appendChild(ta);
-      if (/ipad|iphone/i.test(navigator.userAgent)) {
-        const range = document.createRange();
-        range.selectNodeContents(ta);
-        const sel = window.getSelection();
-        sel.removeAllRanges(); sel.addRange(range);
-        ta.setSelectionRange(0, 999999);
-      } else {
-        ta.select();
-      }
-      let ok = false;
-      try { ok = document.execCommand('copy'); } catch(e) {}
-      document.body.removeChild(ta);
-      if (ok) { onSuccess(); return; }
-      // 方法2: Clipboard API
-      if (navigator.clipboard?.writeText) {
-        navigator.clipboard.writeText(text).then(onSuccess).catch(() => showCopyModal(text, zh2));
-        return;
-      }
-      // 方法3: 页面内弹窗（手机兜底）
-      showCopyModal(text, zh2);
-    };
-
-    doCopy(msg, () => {
-      setShareCopied(true); setTimeout(() => setShareCopied(false), 3000);
-    });
+    // Safari 在 async/await 后无法自动写剪贴板
+    // 直接显示弹窗，用户点"复制"按钮（真实用户手势）100% 可靠
     setShareLoading(false);
+    showCopyModal(msg, zh2);
   };
 
   // 页面内复制弹窗（手机无法自动复制时显示）
@@ -1114,16 +1084,32 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
 <script>document.title="${docTitle}";</script>
 </body></html>`;
 
-    // 手机和电脑都在新标签页打开报告（不自动下载）
-    // window.open(blobUrl) 手机/桌面 Safari 均支持，且不会被拦截（因为有 URL）
+    // 用 iframe 在当前页面内全屏显示报告 — Safari 100% 兼容，不需要弹窗权限
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const blobUrl = URL.createObjectURL(blob);
-    const opened = window.open(blobUrl, '_blank');
-    if (!opened) {
-      // 极少数情况弹窗被拦截：直接在当前标签跳转
-      window.location.href = blobUrl;
-    }
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+
+    const overlay = document.createElement('div');
+    overlay.id = 'pdf-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#fff;display:flex;flex-direction:column;';
+
+    const toolbar = document.createElement('div');
+    toolbar.style.cssText = 'background:#1A3A2A;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;';
+    toolbar.innerHTML = '<span style="color:rgba(255,255,255,.6);font-size:12px;font-family:sans-serif;">' + docTitle + '</span>'
+      + '<div style="display:flex;gap:8px;">'
+      + '<button onclick="window.frames[\'pdf-frame\'].print()" style="background:#6AAF3D;color:#fff;border:none;border-radius:6px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;">'
+      + (zh ? '打印 / 保存 PDF' : 'Print / Save PDF') + '</button>'
+      + '<button onclick="document.getElementById(\'pdf-overlay\').remove();URL.revokeObjectURL(\''+blobUrl+'\');" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:6px;padding:7px 12px;font-size:12px;cursor:pointer;font-family:sans-serif;">✕ ' + (zh ? '关闭' : 'Close') + '</button>'
+      + '</div>';
+
+    const iframe = document.createElement('iframe');
+    iframe.name = 'pdf-frame';
+    iframe.src = blobUrl;
+    iframe.style.cssText = 'flex:1;border:none;width:100%;';
+
+    overlay.appendChild(toolbar);
+    overlay.appendChild(iframe);
+    document.body.appendChild(overlay);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
     setDownloading(false);
   };
 
