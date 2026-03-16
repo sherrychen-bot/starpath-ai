@@ -765,34 +765,77 @@ export default function StarPathC() {
       ? '我的星途成长报告 🌟\n成长原型：「' + archetype + '」｜最匹配方向：' + top1 + '\n\n👇 点击查看完整报告\n' + reportUrl
       : 'My StarPath Report 🌟\nArchetype: ' + archetype + ' | Top match: ' + top1 + '\n\n👇 View full report\n' + reportUrl;
 
-    // 跨浏览器剪贴板（Safari/Chrome/Firefox 全兼容）
-    const ta = document.createElement('textarea');
-    ta.value = msg;
-    ta.setAttribute('readonly', '');
-    ta.style.cssText = 'position:fixed;top:0;left:0;width:2em;height:2em;padding:0;border:none;outline:none;background:transparent;';
-    document.body.appendChild(ta);
-    if (/ipad|iphone/i.test(navigator.userAgent)) {
-      const range = document.createRange();
-      range.selectNodeContents(ta);
-      const sel = window.getSelection();
-      sel.removeAllRanges(); sel.addRange(range);
-      ta.setSelectionRange(0, 999999);
-    } else {
-      ta.select();
-    }
-    let copied = false;
-    try { copied = document.execCommand('copy'); } catch(err) {}
-    document.body.removeChild(ta);
-    if (copied) {
+    // 尝试写剪贴板，失败时显示页面内弹窗（手机友好，带复制按钮）
+    const doCopy = (text, onSuccess) => {
+      // 方法1: execCommand（同步，Safari 桌面/旧版支持）
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;top:0;left:0;width:2em;height:2em;opacity:0;';
+      document.body.appendChild(ta);
+      if (/ipad|iphone/i.test(navigator.userAgent)) {
+        const range = document.createRange();
+        range.selectNodeContents(ta);
+        const sel = window.getSelection();
+        sel.removeAllRanges(); sel.addRange(range);
+        ta.setSelectionRange(0, 999999);
+      } else {
+        ta.select();
+      }
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch(e) {}
+      document.body.removeChild(ta);
+      if (ok) { onSuccess(); return; }
+      // 方法2: Clipboard API
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(text).then(onSuccess).catch(() => showCopyModal(text, zh2));
+        return;
+      }
+      // 方法3: 页面内弹窗（手机兜底）
+      showCopyModal(text, zh2);
+    };
+
+    doCopy(msg, () => {
       setShareCopied(true); setTimeout(() => setShareCopied(false), 3000);
-    } else if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(msg)
-        .then(() => { setShareCopied(true); setTimeout(() => setShareCopied(false), 3000); })
-        .catch(() => window.prompt(zh2 ? '请手动复制：' : 'Copy manually:', reportUrl));
-    } else {
-      window.prompt(zh2 ? '请手动复制：' : 'Copy manually:', reportUrl);
-    }
+    });
     setShareLoading(false);
+  };
+
+  // 页面内复制弹窗（手机无法自动复制时显示）
+  const showCopyModal = (text, isZh) => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    const box = document.createElement('div');
+    box.style.cssText = 'background:#fff;border-radius:16px;padding:24px;width:100%;max-width:400px;font-family:Nunito,sans-serif;';
+    const title = document.createElement('div');
+    title.style.cssText = 'font-size:15px;font-weight:800;color:#1A3A2A;margin-bottom:12px;';
+    title.textContent = isZh ? '复制报告链接' : 'Copy Report Link';
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.cssText = 'width:100%;height:120px;border:1.5px solid #e0e0e0;border-radius:10px;padding:10px;font-size:12px;resize:none;box-sizing:border-box;font-family:Nunito,sans-serif;color:#333;margin-bottom:12px;';
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:8px;';
+    const copyBtn = document.createElement('button');
+    copyBtn.style.cssText = 'flex:1;background:#6AAF3D;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:Nunito,sans-serif;';
+    copyBtn.textContent = isZh ? '复制' : 'Copy';
+    copyBtn.onclick = () => {
+      textarea.select(); textarea.setSelectionRange(0, 999999);
+      try { document.execCommand('copy'); } catch(e) {}
+      copyBtn.textContent = isZh ? '✓ 已复制' : '✓ Copied';
+      copyBtn.style.background = '#4A8C5C';
+      setTimeout(() => document.body.removeChild(overlay), 1500);
+    };
+    const closeBtn = document.createElement('button');
+    closeBtn.style.cssText = 'padding:12px 16px;background:#f5f5f5;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:Nunito,sans-serif;';
+    closeBtn.textContent = isZh ? '关闭' : 'Close';
+    closeBtn.onclick = () => document.body.removeChild(overlay);
+    btnRow.appendChild(copyBtn); btnRow.appendChild(closeBtn);
+    box.appendChild(title); box.appendChild(textarea); box.appendChild(btnRow);
+    overlay.appendChild(box);
+    overlay.onclick = (e) => { if (e.target === overlay) document.body.removeChild(overlay); };
+    document.body.appendChild(overlay);
+    setTimeout(() => { textarea.select(); textarea.setSelectionRange(0, 999999); }, 100);
   };
 
   const downloadPDF = () => {
@@ -1071,27 +1114,16 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
 <script>document.title="${docTitle}";</script>
 </body></html>`;
 
-    // Safari 兼容下载方案：
-    // 1. 先尝试 window.open + document.write（桌面 Chrome/Firefox 最稳定）
-    // 2. 被弹窗拦截时降级为 data URL download（Safari 支持）
-    const pdfWin = window.open('', '_blank');
-    if (pdfWin && !pdfWin.closed) {
-      pdfWin.document.open();
-      pdfWin.document.write(html);
-      pdfWin.document.close();
-    } else {
-      // Safari / 弹窗被拦截：用 data URL + a.download
-      // btoa 需要先把 UTF-8 转成 latin1 safe
-      const encoded = encodeURIComponent(html);
-      const dataUrl = 'data:text/html;charset=utf-8,' + encoded;
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = docTitle + '.html';
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+    // 手机和电脑都在新标签页打开报告（不自动下载）
+    // window.open(blobUrl) 手机/桌面 Safari 均支持，且不会被拦截（因为有 URL）
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const blobUrl = URL.createObjectURL(blob);
+    const opened = window.open(blobUrl, '_blank');
+    if (!opened) {
+      // 极少数情况弹窗被拦截：直接在当前标签跳转
+      window.location.href = blobUrl;
     }
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
     setDownloading(false);
   };
 
