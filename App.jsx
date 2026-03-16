@@ -22,7 +22,7 @@ const G = {
 // ─── STRINGS ──────────────────────────────────────────────────────────────────
 const T = {
   zh: {
-    brand: "STARPATH FINDER", byLine: "星途潜能测试 · StarWise International",
+    brand: "STARPATH FINDER", byLine: "星途潜能测试",
     tagline: "发现你的成长方向",
     subtitle: "不是考试，不是评分\n15 分钟，发现你的成长方向",
     start: "开始免费测评",
@@ -62,11 +62,11 @@ const T = {
     optOwn:"发送给我已有的顾问", optOwnSub:"将报告发到顾问邮箱",
     yourInfo:"你的信息", counselorEmail:"顾问邮箱",
     note:"附言（可选）", notePH:"想跟顾问说的话…",
-    sendBtn:"发送邮件 →", sending:"打开邮件中…",
-    sentTitle:"邮件已打开 📧", sentDesc:"邮件已在你的邮件客户端打开，报告内容已预填，确认发送即可。",
+    sendBtn:"发送给顾问 →", sending:"打开邮件中…",
+    sentTitle:"邮件已打开 📧", sentDesc:"邮件客户端已打开，报告内容已预填，确认发送即可。",
     copyLink:"复制报告内容", copied:"✓ 已复制到剪贴板",
     shareLink:"分享我的报告链接", shareCopied:"✓ 链接已复制！",
-    downloadPdf:"下载 PDF 报告", downloading:"准备中…",
+    downloadPdf:"下载报告", downloading:"准备中…",
     shareDesc:"生成专属链接，家长或老师打开即可在线查看你的完整报告，无需登录。",
     restart:"重新测评", back:"← 返回",
     inviteBtn:"邀请好友测评", inviteDesc:"把测评工具分享给朋友或同学",
@@ -75,7 +75,7 @@ const T = {
     school: s=>{const m={us_public:"美国公立高中",us_private:"美国私立高中",ib:"IB课程",ap:"AP课程",intl:"国际学校",boarding:"寄宿学校",other:"其他"};return Array.isArray(s)?s.map(v=>m[v]||v).join(" · "):(m[s]||s);},
   },
   en: {
-    brand: "STARPATH FINDER", byLine: "星途潜能测试 · StarWise International",
+    brand: "STARPATH FINDER", byLine: "星途潜能测试",
     tagline: "Discover Your True Direction",
     subtitle: "Not a test. Not a score.\n15 minutes to discover your true direction.",
     start: "Start Your Free Assessment",
@@ -111,11 +111,11 @@ const T = {
     optOwn:"Send to my own counselor", optOwnSub:"Email the report to your existing counselor",
     yourInfo:"Your info", counselorEmail:"Counselor's email",
     note:"Note (optional)", notePH:"Any message for the counselor…",
-    sendBtn:"Send Email →", sending:"Opening…",
-    sentTitle:"Email Opened 📧", sentDesc:"Your email client opened with the report pre-filled. Hit send!",
+    sendBtn:"Send to Counselor →", sending:"Opening…",
+    sentTitle:"Email Opened 📧", sentDesc:"Your email client is open with the report pre-filled. Just hit send!",
     copyLink:"Copy Report Text", copied:"✓ Copied to clipboard",
     shareLink:"Share My Report Link", shareCopied:"✓ Link copied!",
-    downloadPdf:"Download PDF", downloading:"Preparing…",
+    downloadPdf:"Download Report", downloading:"Preparing…",
     shareDesc:"Generate a link so parents or teachers can view your full report online — no login needed.",
     restart:"Start Over", back:"← Back",
     inviteBtn:"Invite a Friend", inviteDesc:"Share the assessment tool with friends",
@@ -428,6 +428,7 @@ export default function StarPathC() {
   const [copied, setCopied]   = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
+  const [inviteCopied, setInviteCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
   const t    = T[lang];
@@ -452,52 +453,19 @@ export default function StarPathC() {
 
   // Load shared report from URL hash on mount
   useEffect(() => {
-    (async () => { try {
+    try {
       const hash = window.location.hash;
-      const isReport = hash.startsWith('#report=');
-      const isShort = hash.startsWith('#r=');
-      if (isReport || isShort) {
-        const encoded = isShort
-          ? hash.slice(3).replace(/-/g,'+').replace(/_/g,'/')
-          : hash.slice(8);
-        let payload;
-        try {
-          // Try gzip decompress first
-          if (typeof DecompressionStream !== 'undefined') {
-            const binary = Uint8Array.from(atob(encoded), c => c.charCodeAt(0));
-            const stream = new DecompressionStream('gzip');
-            const writer = stream.writable.getWriter();
-            writer.write(binary); writer.close();
-            const text = await new Response(stream.readable).text();
-            payload = JSON.parse(text);
-          } else {
-            payload = JSON.parse(decodeURIComponent(escape(atob(encoded))));
-          }
-        } catch(_) {
-          payload = JSON.parse(decodeURIComponent(escape(atob(encoded))));
-        }
-        if (payload.p) {
-          setProfile(payload.p);
-          if (payload.n) setName(payload.n);
-          if (payload.e) setEmail(payload.e);
-          if (payload.l) setLang(payload.l);
-          setPhase('result'); setTab('summary');
-        } else if (payload.b) {
-          // Short #r= format
-          setProfile({
-            snap:{ archetype:payload.a, personality:payload.b, tagline:payload.c, strengths:payload.d, motivation:payload.e },
-            radar: payload.f,
-            summary:{ headline:payload.g, keyInsight:payload.h, watchOut:payload.i },
-            majors: (payload.j||[]).map(([n,f])=>({name:n,fit:f})),
-            next:{ month:payload.k, key:payload.l },
-            academic:{ directions:payload.m }
-          });
-          if (payload.n) setName(payload.n);
-          if (payload.o) setLang(payload.o);
-          setPhase('result'); setTab('summary');
-        }
+      if (!hash.startsWith('#report=')) return;
+      const encoded = hash.slice(8);
+      const payload = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+      if (payload.p) {
+        setProfile(payload.p);
+        if (payload.n) setName(payload.n);
+        if (payload.e) setEmail(payload.e);
+        if (payload.l) setLang(payload.l);
+        setPhase('result'); setTab('summary');
       }
-    } catch(e) { /* invalid hash, ignore */ } })();
+    } catch(e) { /* invalid hash, ignore */ }
   }, []);
 
   // confetti on result
@@ -622,22 +590,24 @@ export default function StarPathC() {
     ].join("\n");
 
     // Send to Google Sheets via Apps Script
-    fetch("https://script.google.com/a/macros/foodprintai.com/s/AKfycbzU8qPOyjytLX9NiIgaf5e0OvZLqgGVUdoXV4aa2RQfjLZ0-0MhHxbOhVA1lWlUG9Tl/exec", {
+    // Use text/plain to avoid CORS preflight with no-cors mode
+    const leadData = JSON.stringify({
+      name:          studentName,
+      email:         studentEmail,
+      grade:         P.snap?.grade || "",
+      school:        P.snap?.schoolType || "",
+      archetype:     P.snap?.archetype || "",
+      motivation:    P.snap?.motivation || "",
+      major1:        P.majors?.[0]?.name || "",
+      major2:        P.majors?.[1]?.name || "",
+      counselorNote: P.summary?.counselorNote || "",
+      parentPhone:   parentPhone || "",
+    });
+    fetch("https://script.google.com/a/macros/foodprintai.com/s/AKfycbwb0wxPhfAGTK1JkrCv0oMBCFNZ0mdS4TLeUHK-_7gaDSagdkED8OQOiZZBF6VhemlK/exec", {
       method: "POST",
       mode: "no-cors",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({
-        name:          studentName,
-        email:         studentEmail,
-        grade:         P.snap?.grade || "",
-        school:        P.snap?.schoolType || "",
-        archetype:     P.snap?.archetype || "",
-        motivation:    P.snap?.motivation || "",
-        major1:        P.majors?.[0]?.name || "",
-        major2:        P.majors?.[1]?.name || "",
-        counselorNote: P.summary?.counselorNote || "",
-        parentPhone:   parentPhone || "",
-      })
+      headers: {"Content-Type": "text/plain"},
+      body: leadData,
     }).catch(e => console.log("Sheets error:", e));
   };
 
@@ -686,21 +656,16 @@ export default function StarPathC() {
   const doSend = () => {
     if (!profile) return;
     if (sendMode === "own" && !cEmail.includes("@")) return;
+    if (sending) return;
     setSending(true);
     const reportText = buildReportText(profile, t, lang);
-    const subject = encodeURIComponent(
-      `[StarPath Lead] ${name||"学生"} — ${profile.snap?.personality||""}`
-    );
+    const subject = encodeURIComponent(`[StarPath] ${profile.snap?.personality||""}${name ? " · " + name : ""}`);
     const body = encodeURIComponent((note ? note + "\n\n" : "") + reportText);
-    const to = sendMode === "own" ? encodeURIComponent(cEmail) : "";
-    // Use anchor click — most reliable, avoids browser popup blocking
-    const a = document.createElement("a");
-    a.href = `mailto:${to}?subject=${subject}&body=${body}`;
-    a.style.display = "none";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => { setSending(false); setSent(true); }, 300);
+    const to = sendMode === "own" ? encodeURIComponent(cEmail) : encodeURIComponent("info@starwise-edu.com");
+    const mailtoUrl = `mailto:${to}?subject=${subject}&body=${body}`;
+    // window.location.href works on both desktop and mobile
+    window.location.href = mailtoUrl;
+    setTimeout(() => { setSending(false); setSent(true); }, 1000);
   };
 
   const copyLink = () => {
@@ -723,39 +688,35 @@ export default function StarPathC() {
   };
 
   const shareReport = async () => {
-    if (!profile) return;
+    if (!profile || shareLoading) return;
+    setShareLoading(true);
     try {
-      const P = profile;
-      const zh = lang === "zh";
-      // Build a friendly share message with the URL
-      const shareUrl = window.location.href.split('#')[0];
-      const archetype = P.snap?.archetype || P.snap?.personality || "";
-      const top1 = P.majors?.[0]?.name || "";
-      const msg = zh
-        ? `嗨！我刚完成了 StarPath Finder 星途潜能测评 🌟
-
-我的成长原型是「${archetype}」，最匹配的方向是 ${top1}。
-
-快来测测你的成长方向吧👇
-${shareUrl}`
-        : `Hey! I just completed the StarPath Finder assessment 🌟
-
-My growth archetype is "${archetype}" and my top match is ${top1}.
-
-Discover your own direction here 👇
-${shareUrl}`;
-
-      navigator.clipboard.writeText(msg).then(() => {
-        setShareCopied(true); setTimeout(() => setShareCopied(false), 3000);
-      }).catch(() => {
-        const ta = document.createElement('textarea');
-        ta.value = msg; ta.style.position='fixed'; ta.style.opacity='0';
-        document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+      const payload = {
+        p: {
+          snap: profile.snap,
+          radar: profile.radar,
+          summary: profile.summary,
+          majors: profile.majors,
+          academic: profile.academic,
+          growth: profile.growth,
+          ec: { assessment: profile.ec?.assessment, gaps: profile.ec?.gaps },
+          next: profile.next,
+        },
+        n: name, l: lang
+      };
+      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+      const reportUrl = window.location.href.split('#')[0] + '#report=' + encoded;
+      navigator.clipboard.writeText(reportUrl).then(()=>{
+        setShareCopied(true); setTimeout(()=>setShareCopied(false),3000);
+      }).catch(()=>{
+        const ta=document.createElement('textarea');
+        ta.value=reportUrl;ta.style.position='fixed';ta.style.opacity='0';
+        document.body.appendChild(ta);ta.select();document.execCommand('copy');
         document.body.removeChild(ta);
-        setShareCopied(true); setTimeout(() => setShareCopied(false), 3000);
+        setShareCopied(true);setTimeout(()=>setShareCopied(false),3000);
       });
-    } catch(e) { console.error(e); }
-  };
+    } catch(e) { console.error(e); } finally { setShareLoading(false); }
+  };;
 
   const downloadPDF = () => {
     if (!profile) return;
@@ -775,7 +736,7 @@ ${shareUrl}`;
     ] : [];
 
     const buildRadarSVG = (items) => {
-      const cx=180, cy=160, r=110, n=items.length;
+      const cx=150, cy=130, r=95, n=items.length;
       const angle = (i) => (Math.PI*2*i/n) - Math.PI/2;
       const pt = (i, scale) => [
         cx + Math.cos(angle(i)) * r * scale,
@@ -804,7 +765,7 @@ ${shareUrl}`;
         return `<text x="${x.toFixed(1)}" y="${(y-8).toFixed(1)}" text-anchor="${anchor}" font-size="10" font-weight="700" fill="rgba(26,58,42,0.5)" font-family="sans-serif">${d.label}</text>
                 <text x="${x.toFixed(1)}" y="${(y+6).toFixed(1)}" text-anchor="${anchor}" font-size="11" font-weight="800" fill="#6AAF3D" font-family="sans-serif">${d.val}</text>`;
       });
-      return `<svg width="360" height="320" viewBox="0 0 360 320" xmlns="http://www.w3.org/2000/svg">
+      return `<svg width="300" height="260" viewBox="0 0 300 260" xmlns="http://www.w3.org/2000/svg">
         <defs><radialGradient id="rg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#6AAF3D" stop-opacity="0.2"/><stop offset="100%" stop-color="#6AAF3D" stop-opacity="0.03"/></radialGradient></defs>
         ${rings.map(d=>`<path d="${d}" fill="none" stroke="rgba(26,58,42,0.08)" stroke-width="1"/>`).join('')}
         ${axes.join('')}
@@ -856,7 +817,7 @@ ${shareUrl}`;
   .report-date{font-size:9px;color:rgba(255,255,255,.4);letter-spacing:1px;}
 
   /* Hero */
-  .hero{padding:24px 28px 20px;background:linear-gradient(180deg,rgba(106,175,61,.06) 0%,#fff 100%);border-bottom:2px solid #EAF2E5;}
+  .hero{padding:14px 28px 12px;background:linear-gradient(180deg,rgba(106,175,61,.06) 0%,#fff 100%);border-bottom:2px solid #EAF2E5;}
   .archetype-badge{display:inline-block;padding:3px 12px;border-radius:20px;background:rgba(106,175,61,.12);border:1px solid rgba(106,175,61,.3);font-size:9px;font-weight:800;color:#2D5A3D;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
   .student-meta{font-size:10px;color:#6AAF3D;font-weight:700;letter-spacing:1px;margin-bottom:6px;}
   .personality{font-family:'Playfair Display',serif;font-size:26px;color:#1A3A2A;margin-bottom:6px;line-height:1.2;}
@@ -866,8 +827,8 @@ ${shareUrl}`;
   .motivation{font-size:10px;color:#6B7B6B;line-height:1.7;font-style:italic;}
 
   /* Sections */
-  .section{padding:18px 28px;border-bottom:1px solid #EAF2E5;break-inside:avoid;}
-  .section-2col{padding:18px 28px;border-bottom:1px solid #EAF2E5;display:grid;grid-template-columns:1fr 1fr;gap:20px;break-inside:avoid;}
+  .section{padding:14px 28px;border-bottom:1px solid #EAF2E5;break-inside:avoid;}
+  .section-2col{padding:14px 28px;border-bottom:1px solid #EAF2E5;display:grid;grid-template-columns:1fr 1fr;gap:16px;break-inside:avoid;}
   .sec-label{font-size:7px;letter-spacing:3px;text-transform:uppercase;color:#6AAF3D;font-weight:800;margin-bottom:10px;}
   .body-text{font-size:11px;line-height:1.85;color:#1E2B1E;}
   .highlight{background:#F5F9F3;border-left:3px solid #6AAF3D;padding:10px 14px;margin-top:10px;font-size:11px;line-height:1.8;color:#1E2B1E;}
@@ -1014,11 +975,17 @@ ${shareUrl}`;
 </script>
 </body></html>`;
 
+    // Use download link — works on both desktop and mobile
     const blob = new Blob([html], {type:'text/html'});
     const url = URL.createObjectURL(blob);
-    const win = window.open(url, '_blank');
-    if (win) win.onafterprint = () => URL.revokeObjectURL(url);
-    setTimeout(() => setDownloading(false), 500);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = docTitle + '.html';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => { URL.revokeObjectURL(url); setDownloading(false); }, 1000);
   };
 
   const resetAll = () => {
@@ -1735,6 +1702,7 @@ ${shareUrl}`;
                       <div className="sl">{t.optStarwise.toUpperCase()}</div>
                       <input className="ifield" value={name||""} readOnly placeholder={t.namePH} style={{marginBottom:8,opacity:.6,background:"rgba(26,58,42,.03)"}}/>
                       <input className="ifield" value={email||""} readOnly placeholder={t.emailPH} style={{marginBottom:10,opacity:.6,background:"rgba(26,58,42,.03)"}}/>
+                      <input className="ifield" value="info@starwise-edu.com" readOnly style={{marginBottom:10,opacity:.6,background:"rgba(26,58,42,.03)",color:G.green,fontWeight:700}}/>
                       <input className="ifield" type="tel" value={parentPhone} onChange={e=>setParentPhone(e.target.value)}
                         placeholder={t.parentPhonePH} style={{marginBottom:4}}/>
                       <p style={{fontSize:11,color:G.green,marginBottom:10,fontWeight:600}}>📱 {t.parentPhone}</p>
@@ -1781,11 +1749,17 @@ ${shareUrl}`;
                           const zh2 = lang==='zh';
                           const inviteMsg = zh2 ? `快来试试这个免费的星途潜能测试！15分钟发现你的成长方向 🌟\n${baseUrl}` : `Try this free StarPath Finder assessment! 15 min to discover your direction 🌟\n${baseUrl}`;
                           navigator.clipboard.writeText(inviteMsg).then(()=>{
-                            setShareCopied(true); setTimeout(()=>setShareCopied(false),3000);
+                            setInviteCopied(true); setTimeout(()=>setInviteCopied(false),3000);
+                          }).catch(()=>{
+                            const ta=document.createElement('textarea');ta.value=inviteMsg;
+                            ta.style.position='fixed';ta.style.opacity='0';
+                            document.body.appendChild(ta);ta.select();document.execCommand('copy');
+                            document.body.removeChild(ta);
+                            setInviteCopied(true); setTimeout(()=>setInviteCopied(false),3000);
                           });
                         }}
-                          style={{width:"100%",padding:"11px 16px",borderRadius:10,background:`${G.green}10`,border:`1.5px solid ${G.green}30`,fontSize:13,fontWeight:700,color:G.green,cursor:"pointer",fontFamily:"'Nunito',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:16,transition:"all .2s"}}>
-                          🌟 {t.inviteBtn} {shareCopied?"✓":"→"}
+                          style={{width:"100%",padding:"11px 16px",borderRadius:10,background:inviteCopied?`${G.green}10`:`${G.green}10`,border:`1.5px solid ${G.green}30`,fontSize:13,fontWeight:700,color:G.green,cursor:"pointer",fontFamily:"'Nunito',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:16,transition:"all .2s"}}>
+                          {inviteCopied ? <>✓ {zh?"已复制！去发给朋友吧":"Copied! Send to friends"}</> : <>🌟 {t.inviteBtn} →</>}
                         </button>
                       </div>
 
@@ -1822,9 +1796,10 @@ ${shareUrl}`;
                 /* ── SENT SUCCESS ── */
                 <div className="card anim-pop" style={{padding:"32px 24px"}}>
                   <div style={{textAlign:"center",marginBottom:24}}>
-                    <div style={{fontSize:44,marginBottom:12}}>📧</div>
+                    <div style={{fontSize:44,marginBottom:12}}>✅</div>
                     <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:400,color:G.greenDk,marginBottom:8}}>{t.sentTitle}</h3>
-                    <p style={{fontSize:13,color:G.muted,lineHeight:1.85,maxWidth:300,margin:"0 auto"}}>{t.sentDesc}</p>
+                    <p style={{fontSize:13,color:G.muted,lineHeight:1.85,maxWidth:300,margin:"0 auto",marginBottom:cEmail?12:0}}>{t.sentDesc}</p>
+                    {cEmail && <div style={{padding:"8px 14px",borderRadius:8,background:"rgba(106,175,61,.08)",border:"1px solid rgba(106,175,61,.2)",fontSize:12,fontWeight:700,color:G.green,display:"inline-block"}}>{cEmail}</div>}
                   </div>
                   <div style={{borderTop:"1px solid rgba(26,58,42,.07)",paddingTop:20}}>
                     <div className="sl">{zh?"同时分享给家长或好友":"ALSO SHARE WITH PARENTS OR FRIENDS"}</div>
