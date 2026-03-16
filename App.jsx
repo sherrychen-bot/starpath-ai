@@ -453,21 +453,40 @@ export default function StarPathC() {
 
   // Load shared report from URL hash on mount
   useEffect(() => {
-    try {
-      const hash = window.location.hash;
-      if (!hash.startsWith('#report=')) return;
-      // Restore URL-safe base64 back to standard base64
-      const raw = hash.slice(8).replace(/-/g, '+').replace(/_/g, '/');
-      const padded = raw + '='.repeat((4 - raw.length % 4) % 4);
-      const payload = JSON.parse(decodeURIComponent(escape(atob(padded))));
-      if (payload.p) {
-        setProfile(payload.p);
-        if (payload.n) setName(payload.n);
-        if (payload.e) setEmail(payload.e);
-        if (payload.l) setLang(payload.l);
-        setPhase('result'); setTab('summary');
-      }
-    } catch(e) { /* invalid hash, ignore */ }
+    (async () => {
+      try {
+        const hash = window.location.hash;
+        if (!hash) return;
+        // Short ID format: #id=a1b2c3d4
+        if (hash.startsWith('#id=')) {
+          const id = hash.slice(4);
+          try {
+            const res = await fetch('https://script.google.com/macros/s/AKfycbw6N7GDvJEBVJNsCiKaxvSz3NO15aXuvSZ1BF1gx6zlk9uR2sc31cl7rw2L55LMfpt4/exec?action=load&id=' + id);
+            const json = await res.json();
+            if (json.status === 'ok' && json.data && json.data.p) {
+              setProfile(json.data.p);
+              if (json.data.n) setName(json.data.n);
+              if (json.data.l) setLang(json.data.l);
+              setPhase('result'); setTab('summary');
+            }
+          } catch(e) { console.log('Load failed:', e); }
+          return;
+        }
+        // Encoded format: #report=...
+        if (hash.startsWith('#report=')) {
+          const raw = hash.slice(8).replace(/-/g, '+').replace(/_/g, '/');
+          const padded = raw + '='.repeat((4 - raw.length % 4) % 4);
+          const payload = JSON.parse(decodeURIComponent(escape(atob(padded))));
+          if (payload.p) {
+            setProfile(payload.p);
+            if (payload.n) setName(payload.n);
+            if (payload.e) setEmail(payload.e);
+            if (payload.l) setLang(payload.l);
+            setPhase('result'); setTab('summary');
+          }
+        }
+      } catch(e) { /* invalid hash, ignore */ }
+    })();
   }, []);
 
   // confetti on result
@@ -688,57 +707,29 @@ export default function StarPathC() {
     if (!profile || shareLoading) return;
     setShareLoading(true);
     try {
-      const payload = {
-        p: {
-          snap: profile.snap,
-          radar: profile.radar,
-          summary: profile.summary,
-          majors: profile.majors,
-          academic: profile.academic,
-          growth: profile.growth,
-          ec: { assessment: profile.ec?.assessment, gaps: profile.ec?.gaps },
-          next: profile.next,
-        },
-        n: name, l: lang
-      };
-      // URL-safe base64: replace + with -, / with _, remove =
-      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
-        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-      const reportUrl = window.location.href.split('#')[0] + '#report=' + encoded;
       const zh2 = lang === "zh";
       const archetype = profile.snap?.archetype || profile.snap?.personality || "";
       const top1 = profile.majors?.[0]?.name || "";
-
-      const buildMsg = (url) => zh2
-        ? `嗨！我刚完成了星途潜能测评 🌟\n\n我的成长原型是「${archetype}」，最匹配的方向是 ${top1}。\n\n点击查看我的完整成长报告 👇\n${url}`
-        : `Hey! I just completed the StarPath Finder assessment 🌟\n\nMy growth archetype is "${archetype}" and my top match is ${top1}.\n\nView my full profile here 👇\n${url}`;
-
-      const copyMsg = (msg) => {
-        navigator.clipboard.writeText(msg).then(()=>{
-          setShareCopied(true); setTimeout(()=>setShareCopied(false),3000);
-        }).catch(()=>{
-          const ta=document.createElement('textarea');
-          ta.value=msg;ta.style.position='fixed';ta.style.opacity='0';
-          document.body.appendChild(ta);ta.select();document.execCommand('copy');
-          document.body.removeChild(ta);
-          setShareCopied(true);setTimeout(()=>setShareCopied(false),3000);
-        });
-      };
-
-      // Try to shorten URL via is.gd API
-      try {
-        const shortRes = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(reportUrl)}`);
-        const shortData = await shortRes.json();
-        if (shortData.shorturl) {
-          copyMsg(buildMsg(shortData.shorturl));
-          return;
-        }
-      } catch(e) { /* fallback to full URL */ }
-
-      // Fallback: use full URL
-      copyMsg(buildMsg(reportUrl));
+      // Encode full profile into URL
+      const payload = { p: profile, n: name, l: lang };
+      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
+        .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+      const reportUrl = window.location.href.split('#')[0] + '#report=' + encoded;
+      // Build share message with REPORT link (not homepage)
+      const msg = zh2
+        ? `嗨！我刚完成了星途潜能测评 🌟\n\n我的成长原型是「${archetype}」，最匹配的方向是 ${top1}。\n\n点击查看我的完整成长报告 👇\n${reportUrl}`
+        : `Hey! I just completed the StarPath Finder assessment 🌟\n\nMy archetype is "${archetype}" and top match is ${top1}.\n\nView my full report here 👇\n${reportUrl}`;
+      navigator.clipboard.writeText(msg).then(()=>{
+        setShareCopied(true); setTimeout(()=>setShareCopied(false),3000);
+      }).catch(()=>{
+        const ta=document.createElement('textarea');
+        ta.value=msg;ta.style.position='fixed';ta.style.opacity='0';
+        document.body.appendChild(ta);ta.select();document.execCommand('copy');
+        document.body.removeChild(ta);
+        setShareCopied(true);setTimeout(()=>setShareCopied(false),3000);
+      });
     } catch(e) { console.error(e); } finally { setShareLoading(false); }
-  };;
+  };;;
 
   const downloadPDF = () => {
     if (!profile) return;
@@ -988,23 +979,32 @@ export default function StarPathC() {
   </div>
 
 </div>
-<script>
-  document.title = "${docTitle}";
-  window.onload = function(){ window.print(); }
-</script>
+<div id="pbar" style="position:fixed;bottom:0;left:0;right:0;background:#1A3A2A;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;z-index:999;">
+  <span style="color:rgba(255,255,255,.55);font-size:12px;font-family:sans-serif;">${docTitle}</span>
+  <div style="display:flex;gap:8px;">
+    <button onclick="window.print()" style="background:#6AAF3D;color:#fff;border:none;border-radius:8px;padding:9px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif;">${zh?'下载 / 打印 PDF':'Download / Print PDF'}</button>
+    <button onclick="document.getElementById('pbar').style.display='none'" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);border:none;border-radius:8px;padding:9px 14px;font-size:12px;cursor:pointer;font-family:sans-serif;">✕</button>
+  </div>
+</div>
+<style>@media print{#pbar{display:none!important;}}body{padding-bottom:56px;}</style>
+<script>document.title="${docTitle}";</script>
 </body></html>`;
 
-    // Use download link — works on both desktop and mobile
+    // Open report in new tab with print button
     const blob = new Blob([html], {type:'text/html'});
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = docTitle + '.html';
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => { URL.revokeObjectURL(url); setDownloading(false); }, 1000);
+    const win = window.open(url, '_blank');
+    if (!win) {
+      // Popup blocked fallback - direct download
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = docTitle + '.html';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+    setTimeout(() => { URL.revokeObjectURL(url); setDownloading(false); }, 2000);
   };
 
   const resetAll = () => {
@@ -1767,8 +1767,8 @@ export default function StarPathC() {
                           const zh2 = lang==='zh';
                           const archetype2 = profile?.snap?.archetype || profile?.snap?.personality || "";
                           const inviteMsg = zh2
-                            ? `嗨！我刚完成了星途潜能测评 🌟${archetype2 ? `，我的成长原型是「${archetype2}」` : ""}\n快来测测你的成长方向吧 👇\n${baseUrl}`
-                            : `Hey! I just completed the StarPath Finder assessment 🌟${archetype2 ? ` — my archetype is "${archetype2}"` : ""}\nDiscover your own direction here 👇\n${baseUrl}`;
+                            ? `嗨！我刚做了一个很有意思的成长测评，${archetype2 ? `我的成长原型是「${archetype2}」` : "快来试试"}！\n你也来测测看吧 👇\n${baseUrl}`
+                            : `Hey! I took this awesome free assessment — ${archetype2 ? `my archetype is "${archetype2}"` : "you should try it"}!\nFind out yours here 👇\n${baseUrl}`;
                           navigator.clipboard.writeText(inviteMsg).then(()=>{
                             setInviteCopied(true); setTimeout(()=>setInviteCopied(false),3000);
                           }).catch(()=>{
