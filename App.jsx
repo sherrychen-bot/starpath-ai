@@ -533,6 +533,7 @@ export default function StarPathC() {
         } catch(e) { console.warn('Legacy hash decode failed:', e); }
       }
     } catch(e) { /* invalid hash */ }
+    })();
   }, []);
 
   // confetti on result
@@ -1088,18 +1089,19 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
     <button id="shareBtn" onclick="
       var btn=this;
       var shareUrl=window._shareUrl||'';
-      if(!shareUrl){btn.textContent='${zh?"生成中…":"Generating…"}';return;}
+      if(!shareUrl){btn.textContent='${zh ? "生成中…" : "Generating…"}';return;}
+      var prefix='${zh ? "我的星途成长报告 🌟\\n点击查看完整报告：" : "My StarPath Report 🌟\\nView here: "}';
       var ta=document.createElement('textarea');
-      ta.value=(${JSON.stringify(zh?'我的星途成长报告 🌟\n点击查看完整报告：':'My StarPath Report 🌟\nView here: ')})+shareUrl;
+      ta.value=prefix+shareUrl;
       ta.style.cssText='position:fixed;top:-999px;opacity:0;';
       document.body.appendChild(ta);
       ta.select();
       try{document.execCommand('copy');}catch(e){}
       document.body.removeChild(ta);
       btn.style.background='#4A8C5C';
-      btn.textContent='${zh?"✓ 链接已复制":"✓ Link Copied"}';
-      setTimeout(function(){btn.style.background='rgba(255,255,255,.1)';btn.textContent='${zh?"🔗 分享报告":"🔗 Share"}';},2500);
-    " style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:sans-serif;">${zh?'🔗 分享报告':'🔗 Share'}</button>
+      btn.textContent='${zh ? "✓ 链接已复制" : "✓ Link Copied"}';
+      setTimeout(function(){btn.style.background='rgba(255,255,255,.1)';btn.textContent='${zh ? "🔗 分享报告" : "🔗 Share"}';},2500);
+    " style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:sans-serif;">${zh ? '🔗 分享报告' : '🔗 Share'}</button>
     <button onclick="document.getElementById('pbar').style.display='none'" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);border:none;border-radius:6px;padding:7px 11px;font-size:11px;cursor:pointer;font-family:sans-serif;">✕</button>
   </div>
 </div>
