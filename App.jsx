@@ -461,13 +461,16 @@ export default function StarPathC() {
         if (hash.startsWith('#id=')) {
           const id = hash.slice(4);
           try {
-            const res = await fetch('https://script.google.com/macros/s/AKfycby092STDn5I6V6UJIbwLCrLjOD2KmG1RbM4kcFXUfg5-43cQKoQHbIu423kHMFcE2pv/exec?action=load&id=' + id);
-            const json = await res.json();
-            if (json.status === 'ok' && json.data && json.data.p) {
-              setProfile(json.data.p);
-              if (json.data.n) setName(json.data.n);
-              if (json.data.l) setLang(json.data.l);
-              setPhase('result'); setTab('summary');
+            const res = await fetch('https://script.google.com/macros/s/AKfycby092STDn5I6V6UJIbwLCrLjOD2KmG1RbM4kcFXUfg5-43cQKoQHbIu423kHMFcE2pv/exec?id=' + id);
+            const rawText = await res.text();
+            if (rawText && rawText !== 'NOT_FOUND') {
+              const payload = JSON.parse(rawText);
+              if (payload && payload.p) {
+                setProfile(payload.p);
+                if (payload.n) setName(payload.n);
+                if (payload.l) setLang(payload.l);
+                setPhase('result'); setTab('summary');
+              }
             }
           } catch(e) { console.log('Load failed:', e); }
           return;
@@ -610,7 +613,7 @@ export default function StarPathC() {
       `—— StarPath AI · by StarWise`,
     ].join("\n");
 
-    // Send to Google Sheets via GET request (bypasses CORS completely)
+    // Send lead to Google Sheets — use both img pixel (CORS-free) + fetch for reliability
     const params = new URLSearchParams({
       name:          studentName,
       email:         studentEmail,
@@ -623,8 +626,12 @@ export default function StarPathC() {
       counselorNote: (P.summary?.counselorNote || "").slice(0, 300),
       parentPhone:   parentPhone || "",
     });
+    const gasUrl = "https://script.google.com/macros/s/AKfycby092STDn5I6V6UJIbwLCrLjOD2KmG1RbM4kcFXUfg5-43cQKoQHbIu423kHMFcE2pv/exec?" + params.toString();
+    // Primary: fetch with no-cors so it fires even if CORS header missing
+    fetch(gasUrl, { method: 'GET', mode: 'no-cors' }).catch(() => {});
+    // Secondary fallback: img pixel
     const img = new Image();
-    img.src = "https://script.google.com/macros/s/AKfycby092STDn5I6V6UJIbwLCrLjOD2KmG1RbM4kcFXUfg5-43cQKoQHbIu423kHMFcE2pv/exec?" + params.toString();
+    img.src = gasUrl;
   };
 
   // Build plain-text report summary for clipboard / email
@@ -713,19 +720,23 @@ export default function StarPathC() {
 
       // Save report to server and get short 8-char ID
       const payload = JSON.stringify({ p: profile, n: name, l: lang });
-      const saveUrl = "https://script.google.com/macros/s/AKfycby092STDn5I6V6UJIbwLCrLjOD2KmG1RbM4kcFXUfg5-43cQKoQHbIu423kHMFcE2pv/exec?action=save&data=" + encodeURIComponent(payload);
-      const res = await fetch(saveUrl);
-      const reportId = (await res.text()).trim();
-
       let reportUrl;
-      if (reportId && reportId.length === 8 && /^[a-f0-9]+$/i.test(reportId)) {
-        // Got short ID — use it
-        reportUrl = window.location.href.split('#')[0] + '#id=' + reportId;
-      } else {
-        // Fallback: encode in URL
+      try {
+        const saveUrl = "https://script.google.com/macros/s/AKfycby092STDn5I6V6UJIbwLCrLjOD2KmG1RbM4kcFXUfg5-43cQKoQHbIu423kHMFcE2pv/exec?action=save&data=" + encodeURIComponent(payload);
+        const res = await fetch(saveUrl, { redirect: 'follow' });
+        const reportId = (await res.text()).trim();
+        if (reportId && reportId.length <= 12 && /^[a-zA-Z0-9]+$/.test(reportId)) {
+          // Got short ID from server
+          reportUrl = window.location.href.split('#')[0].split('?')[0] + '#id=' + reportId;
+        } else {
+          throw new Error('bad id: ' + reportId);
+        }
+      } catch(saveErr) {
+        console.warn('Save to server failed, using URL encoding:', saveErr);
+        // Fallback: encode full report in URL hash
         const encoded = btoa(unescape(encodeURIComponent(payload)))
           .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
-        reportUrl = window.location.href.split('#')[0] + '#report=' + encoded;
+        reportUrl = window.location.href.split('#')[0].split('?')[0] + '#report=' + encoded;
       }
 
       const msg = zh2
@@ -1004,24 +1015,25 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
 <script>document.title="${docTitle}";</script>
 </body></html>`;
 
-    // Use blob URL but keep reference alive via hidden iframe
-    const blob = new Blob([html], {type: 'text/html;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    // Store URL on window so it's not GC'd
-    window._starpathReportUrl = url;
-    const a = document.createElement('a');
-    a.href = url;
-    a.target = '_blank';
-    a.rel = 'noopener';
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    // Revoke after 60s
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-      delete window._starpathReportUrl;
-    }, 60000);
+    // Open new window and write HTML directly — blob: URLs blocked by CSP on Cloudflare Pages
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+    } else {
+      // Popup blocked fallback: offer download as .html file
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = docTitle + '.html';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    }
     setDownloading(false);
   };
 
