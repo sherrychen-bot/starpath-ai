@@ -591,26 +591,21 @@ export default function StarPathC() {
       `—— StarPath AI · by StarWise`,
     ].join("\n");
 
-    // Send to Google Sheets via Apps Script
-    // Use text/plain to avoid CORS preflight with no-cors mode
-    const leadData = JSON.stringify({
+    // Send to Google Sheets via GET request (bypasses CORS completely)
+    const params = new URLSearchParams({
       name:          studentName,
       email:         studentEmail,
       grade:         P.snap?.grade || "",
       school:        P.snap?.schoolType || "",
       archetype:     P.snap?.archetype || "",
-      motivation:    P.snap?.motivation || "",
+      motivation:    (P.snap?.motivation || "").slice(0, 200),
       major1:        P.majors?.[0]?.name || "",
       major2:        P.majors?.[1]?.name || "",
-      counselorNote: P.summary?.counselorNote || "",
+      counselorNote: (P.summary?.counselorNote || "").slice(0, 300),
       parentPhone:   parentPhone || "",
     });
-    fetch("https://script.google.com/macros/s/AKfycbw4C09QEc_ro1jiroGGNhaPhywldEpquFsqifSpsaSQWf1b1mumaN840AbjCvJEiD9W/exec", {
-      method: "POST",
-      mode: "no-cors",
-      headers: {"Content-Type": "text/plain"},
-      body: leadData,
-    }).catch(e => console.log("Sheets error:", e));
+    const img = new Image();
+    img.src = "https://script.google.com/macros/s/AKfycbw6N7GDvJEBVJNsCiKaxvSz3NO15aXuvSZ1BF1gx6zlk9uR2sc31cl7rw2L55LMfpt4/exec?" + params.toString();
   };
 
   // Build plain-text report summary for clipboard / email
@@ -710,15 +705,38 @@ export default function StarPathC() {
       const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
         .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
       const reportUrl = window.location.href.split('#')[0] + '#report=' + encoded;
-      navigator.clipboard.writeText(reportUrl).then(()=>{
-        setShareCopied(true); setTimeout(()=>setShareCopied(false),3000);
-      }).catch(()=>{
-        const ta=document.createElement('textarea');
-        ta.value=reportUrl;ta.style.position='fixed';ta.style.opacity='0';
-        document.body.appendChild(ta);ta.select();document.execCommand('copy');
-        document.body.removeChild(ta);
-        setShareCopied(true);setTimeout(()=>setShareCopied(false),3000);
-      });
+      const zh2 = lang === "zh";
+      const archetype = profile.snap?.archetype || profile.snap?.personality || "";
+      const top1 = profile.majors?.[0]?.name || "";
+
+      const buildMsg = (url) => zh2
+        ? `嗨！我刚完成了星途潜能测评 🌟\n\n我的成长原型是「${archetype}」，最匹配的方向是 ${top1}。\n\n点击查看我的完整成长报告 👇\n${url}`
+        : `Hey! I just completed the StarPath Finder assessment 🌟\n\nMy growth archetype is "${archetype}" and my top match is ${top1}.\n\nView my full profile here 👇\n${url}`;
+
+      const copyMsg = (msg) => {
+        navigator.clipboard.writeText(msg).then(()=>{
+          setShareCopied(true); setTimeout(()=>setShareCopied(false),3000);
+        }).catch(()=>{
+          const ta=document.createElement('textarea');
+          ta.value=msg;ta.style.position='fixed';ta.style.opacity='0';
+          document.body.appendChild(ta);ta.select();document.execCommand('copy');
+          document.body.removeChild(ta);
+          setShareCopied(true);setTimeout(()=>setShareCopied(false),3000);
+        });
+      };
+
+      // Try to shorten URL via is.gd API
+      try {
+        const shortRes = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(reportUrl)}`);
+        const shortData = await shortRes.json();
+        if (shortData.shorturl) {
+          copyMsg(buildMsg(shortData.shorturl));
+          return;
+        }
+      } catch(e) { /* fallback to full URL */ }
+
+      // Fallback: use full URL
+      copyMsg(buildMsg(reportUrl));
     } catch(e) { console.error(e); } finally { setShareLoading(false); }
   };;
 
@@ -740,36 +758,31 @@ export default function StarPathC() {
     ] : [];
 
     const buildRadarSVG = (items) => {
-      const cx=150, cy=130, r=95, n=items.length;
+      const cx=200, cy=185, r=110, n=items.length;
       const angle = (i) => (Math.PI*2*i/n) - Math.PI/2;
       const pt = (i, scale) => [
         cx + Math.cos(angle(i)) * r * scale,
         cy + Math.sin(angle(i)) * r * scale
       ];
-      // Grid rings
       const rings = [0.25,0.5,0.75,1].map(s =>
         items.map((_,i)=>pt(i,s)).map((p,i)=>`${i===0?'M':'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ')+'Z'
       );
-      // Data polygon
       const poly = items.map((d,i)=>pt(i,d.val/100)).map((p,i)=>`${i===0?'M':'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ')+'Z';
-      // Axis lines
       const axes = items.map((_,i) => {
         const [x,y] = pt(i,1);
         return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(26,58,42,0.12)" stroke-width="1"/>`;
       });
-      // Dots
       const dots = items.map((d,i) => {
         const [x,y] = pt(i,d.val/100);
         return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="#6AAF3D" stroke="white" stroke-width="2"/>`;
       });
-      // Labels
       const labels = items.map((d,i) => {
-        const [x,y] = pt(i,1.22);
-        const anchor = x < cx-5 ? 'end' : x > cx+5 ? 'start' : 'middle';
-        return `<text x="${x.toFixed(1)}" y="${(y-8).toFixed(1)}" text-anchor="${anchor}" font-size="10" font-weight="700" fill="rgba(26,58,42,0.5)" font-family="sans-serif">${d.label}</text>
-                <text x="${x.toFixed(1)}" y="${(y+6).toFixed(1)}" text-anchor="${anchor}" font-size="11" font-weight="800" fill="#6AAF3D" font-family="sans-serif">${d.val}</text>`;
+        const [x,y] = pt(i,1.32);
+        const anchor = x < cx-8 ? 'end' : x > cx+8 ? 'start' : 'middle';
+        return `<text x="${x.toFixed(1)}" y="${(y-6).toFixed(1)}" text-anchor="${anchor}" font-size="10" font-weight="700" fill="rgba(26,58,42,0.55)" font-family="sans-serif">${d.label}</text>
+                <text x="${x.toFixed(1)}" y="${(y+8).toFixed(1)}" text-anchor="${anchor}" font-size="12" font-weight="800" fill="#6AAF3D" font-family="sans-serif">${d.val}</text>`;
       });
-      return `<svg width="300" height="260" viewBox="0 0 300 260" xmlns="http://www.w3.org/2000/svg">
+      return `<svg width="400" height="370" viewBox="0 0 400 370" xmlns="http://www.w3.org/2000/svg">
         <defs><radialGradient id="rg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#6AAF3D" stop-opacity="0.2"/><stop offset="100%" stop-color="#6AAF3D" stop-opacity="0.03"/></radialGradient></defs>
         ${rings.map(d=>`<path d="${d}" fill="none" stroke="rgba(26,58,42,0.08)" stroke-width="1"/>`).join('')}
         ${axes.join('')}
@@ -1443,7 +1456,7 @@ export default function StarPathC() {
                   <div className="card" style={{padding:"24px 20px 16px"}}>
                     <div className="sl">{t.lRadar}</div>
                     <ResponsiveContainer width="100%" height={260}>
-                      <RadarChart data={data} margin={{top:10,right:28,bottom:10,left:28}}>
+                      <RadarChart data={data} margin={{top:16,right:50,bottom:16,left:50}}>
                         <defs>
                           <radialGradient id="radarFill" cx="50%" cy="50%" r="50%">
                             <stop offset="0%" stopColor={G.green} stopOpacity={0.25}/>
@@ -1752,7 +1765,10 @@ export default function StarPathC() {
                         <button onClick={()=>{
                           const baseUrl = window.location.href.split('#')[0];
                           const zh2 = lang==='zh';
-                          const inviteMsg = zh2 ? `快来试试这个免费的星途潜能测试！15分钟发现你的成长方向 🌟\n${baseUrl}` : `Try this free StarPath Finder assessment! 15 min to discover your direction 🌟\n${baseUrl}`;
+                          const archetype2 = profile?.snap?.archetype || profile?.snap?.personality || "";
+                          const inviteMsg = zh2
+                            ? `嗨！我刚完成了星途潜能测评 🌟${archetype2 ? `，我的成长原型是「${archetype2}」` : ""}\n快来测测你的成长方向吧 👇\n${baseUrl}`
+                            : `Hey! I just completed the StarPath Finder assessment 🌟${archetype2 ? ` — my archetype is "${archetype2}"` : ""}\nDiscover your own direction here 👇\n${baseUrl}`;
                           navigator.clipboard.writeText(inviteMsg).then(()=>{
                             setInviteCopied(true); setTimeout(()=>setInviteCopied(false),3000);
                           }).catch(()=>{
