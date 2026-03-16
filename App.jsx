@@ -463,29 +463,53 @@ export default function StarPathC() {
 
   // Load shared report from URL hash on mount
   useEffect(() => {
-    try {
-      const hash = window.location.hash;
-      if (!hash) return;
+    (async () => {
+      try {
+        const hash = window.location.hash;
+        if (!hash) return;
 
-      // New format: #r=... (v2 minimal, direct UTF-8 base64)
+        // Short ID format: #id=xxxxxxxx → fetch full report from GAS
+        if (hash.startsWith('#id=')) {
+          const id = hash.slice(4);
+          try {
+            const res = await fetch("https://script.google.com/macros/s/AKfycbx3F1M49ZZ9263YwuLbZ_Qiu_2bQ-DN7Dpmz3HBIhCdLpKSkkRmqtJGr9SsvVi5aY2n/exec" + '?id=' + id);
+            const json = await res.json();
+            if (json.ok && json.payload) {
+              const d = json.payload;
+              if (d.p) {
+                setProfile(d.p);
+                if (d.n) setName(d.n);
+                if (d.l) setLang(d.l);
+                setPhase('result'); setTab('summary');
+              }
+            }
+          } catch(e) { console.warn('Load report failed:', e); }
+          return;
+        }
+
+      // New format: #r=... (v2/v3 minimal, direct UTF-8 base64)
       if (hash.startsWith('#r=')) {
         const json = fromB64(hash.slice(3));
         if (!json) return;
         const d = JSON.parse(json);
-        if (d.v === 2) {
+        if (d.v === 3 || d.v === 2) {
+          const isV3 = d.v === 3;
           setProfile({
             snap: {
-              archetype: d.a, personality: d.p, tagline: d.t,
-              thinkingStyle: d.ts, motivation: d.mo,
-              strengths: (d.st||[]).map(s => ({name:s.n, desc:s.d})),
+              archetype: d.a, personality: d.p,
+              tagline: isV3 ? "" : (d.t||""),
+              strengths: isV3 ? [] : (d.st||[]).map(s=>({name:s.n,desc:s.d})),
+              motivation: isV3 ? "" : (d.mo||""),
             },
-            radar: d.r,
-            summary: { headline: d.h, keyInsight: d.k, watchOut: d.w },
-            academic: { directions: d.ac },
-            majors: (d.mj||[]).map(m => ({name:m.n, fit:m.f, why:m.w, courses:m.c, careers:m.cr})),
-            next: { month: d.nx?.mo||[], key: d.nx?.k||"" },
-            ec: { assessment: d.ec?.as||"", narrative: d.ec?.nv||"", gaps: d.ec?.gp||[] },
-            growth: { projects: d.gr?.p||[], narrative: d.gr?.nv||"" },
+            radar: isV3
+              ? { academicCuriosity:d.r[0], analyticalStrength:d.r[1], creativity:d.r[2], socialImpactDrive:d.r[3], leadership:d.r[4] }
+              : d.r,
+            summary: { headline: d.h||"", keyInsight: isV3?"":d.k, watchOut: isV3?"":d.w },
+            academic: { directions: isV3 ? [] : (d.ac||[]) },
+            majors: (d.mj||[]).map(m => Array.isArray(m)
+              ? {name:m[0], fit:m[1], why:'', courses:[], careers:[]}
+              : {name:m.n, fit:m.f, why:'', courses:[], careers:[]}),
+            next: { month: [], key: typeof d.nx==='string' ? d.nx : "" },
           });
           if (d.nm) setName(d.nm);
           if (d.ln) setLang(d.ln);
@@ -735,39 +759,39 @@ export default function StarPathC() {
     return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
   };
 
-  const shareReport = () => {
+  const shareReport = async () => {
     if (!profile || shareLoading) return;
     setShareLoading(true);
     const zh2 = lang === "zh";
     const archetype = profile.snap?.archetype || profile.snap?.personality || "";
     const top1 = profile.majors?.[0]?.name || "";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbx3F1M49ZZ9263YwuLbZ_Qiu_2bQ-DN7Dpmz3HBIhCdLpKSkkRmqtJGr9SsvVi5aY2n/exec";
 
-    // Store only what the shared view needs — minimal format, direct UTF-8 base64
-    // This avoids the 3x size penalty from encodeURIComponent on Chinese text
-    const minimal = {
-      v: 2,  // version flag
-      a: profile.snap?.archetype || "",
-      p: profile.snap?.personality || "",
-      t: profile.snap?.tagline || "",
-      ts: profile.snap?.thinkingStyle || "",
-      st: (profile.snap?.strengths||[]).map(s => typeof s==='object' ? {n:s.name,d:s.desc} : {n:s,d:''}),
-      mo: profile.snap?.motivation || "",
-      r: profile.radar || {},
-      h: profile.summary?.headline || "",
-      k: profile.summary?.keyInsight || "",
-      w: profile.summary?.watchOut || "",
-      ac: profile.academic?.directions || [],
-      mj: (profile.majors||[]).map(m => ({n:m.name, f:m.fit, w:m.why, c:m.courses||[], cr:m.careers||[]})),
-      nx: { mo: profile.next?.month||[], k: profile.next?.key||"" },
-      ec: { as: profile.ec?.assessment||"", nv: profile.ec?.narrative||"", gp: profile.ec?.gaps||[] },
-      gr: { p: profile.growth?.projects||[], nv: profile.growth?.narrative||"" },
-      nm: name || "",
-      ln: lang || "zh",
-    };
-
-    const encoded = toB64(JSON.stringify(minimal));
-    const baseUrl = window.location.href.split('#')[0].split('?')[0];
-    const reportUrl = baseUrl + '#r=' + encoded;
+    // Save full report to GAS → get 8-char ID → short URL ~50 chars
+    const payload = JSON.stringify({ p: profile, n: name, l: lang });
+    let reportUrl;
+    try {
+      const res = await fetch(GAS_URL + '?action=save&data=' + encodeURIComponent(payload));
+      const json = await res.json();
+      if (json.ok && json.id) {
+        const baseUrl = window.location.href.split('#')[0].split('?')[0];
+        reportUrl = baseUrl + '#id=' + json.id;
+      } else {
+        throw new Error('no id');
+      }
+    } catch(e) {
+      // Fallback: encode in URL
+      const rad = profile.radar || {};
+      const minimal = {
+        v:3, a:profile.snap?.archetype||"", p:profile.snap?.personality||"",
+        h:(profile.summary?.headline||"").slice(0,60),
+        r:[rad.academicCuriosity||0,rad.analyticalStrength||0,rad.creativity||0,rad.socialImpactDrive||0,rad.leadership||0],
+        mj:(profile.majors||[]).slice(0,4).map(m=>[m.name,m.fit]),
+        nm:name||"", ln:lang||"zh",
+      };
+      const baseUrl = window.location.href.split('#')[0].split('?')[0];
+      reportUrl = baseUrl + '#r=' + toB64(JSON.stringify(minimal));
+    }
 
     const msg = zh2
       ? `我的星途成长报告 🌟\n成长原型：「${archetype}」｜最匹配方向：${top1}\n\n👇 点击查看完整报告\n${reportUrl}`
@@ -1061,6 +1085,21 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
   <span style="color:rgba(255,255,255,.5);font-size:10px;font-family:sans-serif;">${docTitle}</span>
   <div style="display:flex;gap:7px;">
     <button onclick="window.print()" style="background:#6AAF3D;color:#fff;border:none;border-radius:6px;padding:7px 18px;font-size:11px;font-weight:700;cursor:pointer;font-family:sans-serif;">${zh?'下载 / 打印 PDF':'Download / Print PDF'}</button>
+    <button id="shareBtn" onclick="
+      var btn=this;
+      var shareUrl=window._shareUrl||'';
+      if(!shareUrl){btn.textContent='${zh?"生成中…":"Generating…"}';return;}
+      var ta=document.createElement('textarea');
+      ta.value=(${JSON.stringify(zh?'我的星途成长报告 🌟\n点击查看完整报告：':'My StarPath Report 🌟\nView here: ')})+shareUrl;
+      ta.style.cssText='position:fixed;top:-999px;opacity:0;';
+      document.body.appendChild(ta);
+      ta.select();
+      try{document.execCommand('copy');}catch(e){}
+      document.body.removeChild(ta);
+      btn.style.background='#4A8C5C';
+      btn.textContent='${zh?"✓ 链接已复制":"✓ Link Copied"}';
+      setTimeout(function(){btn.style.background='rgba(255,255,255,.1)';btn.textContent='${zh?"🔗 分享报告":"🔗 Share"}';},2500);
+    " style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:sans-serif;">${zh?'🔗 分享报告':'🔗 Share'}</button>
     <button onclick="document.getElementById('pbar').style.display='none'" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);border:none;border-radius:6px;padding:7px 11px;font-size:11px;cursor:pointer;font-family:sans-serif;">✕</button>
   </div>
 </div>
@@ -1074,6 +1113,17 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
       pdfWin.document.write(html);
       pdfWin.document.close();
       try { pdfWin.document.title = docTitle; } catch(e) {}
+      // Inject share URL asynchronously (after GAS save)
+      const GAS_URL = "https://script.google.com/macros/s/AKfycbx3F1M49ZZ9263YwuLbZ_Qiu_2bQ-DN7Dpmz3HBIhCdLpKSkkRmqtJGr9SsvVi5aY2n/exec";
+      const pdfPayload = JSON.stringify({ p: P, n: name, l: lang });
+      fetch(GAS_URL + '?action=save&data=' + encodeURIComponent(pdfPayload))
+        .then(r => r.json())
+        .then(j => {
+          if (j.ok && j.id) {
+            const shareUrl = window.location.href.split('#')[0].split('?')[0] + '#id=' + j.id;
+            try { pdfWin._shareUrl = shareUrl; } catch(e) {}
+          }
+        }).catch(() => {});
     } else {
       // Popup blocked: download as .html file instead
       const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
@@ -1127,7 +1177,7 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
         },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
-          max_tokens: 4000,
+          max_tokens: 5000,
           temperature: 0.3,
           system: buildPrompt(newLang),
           messages: [{role:"user", content:"Student assessment responses:\n" + lines.join("\n")}],
@@ -1943,4 +1993,3 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
 
   return null;
 }
-  
