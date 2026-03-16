@@ -469,8 +469,7 @@ export default function StarPathC() {
     // 短链接格式 #id=xxxxxxxx → 从 GAS 读取完整报告
     if (hash.startsWith('#id=')) {
       const id = hash.slice(4);
-      fetch("https://script.google.com/macros/s/AKfycbx3F1M49ZZ9263YwuLbZ_Qiu_2bQ-DN7Dpmz3HBIhCdLpKSkkRmqtJGr9SsvVi5aY2n/exec?id=" + id)
-        .then(r => r.json())
+      jsonpCall("https://script.google.com/macros/s/AKfycbxfX4wPoLml4SffUSibaL63thjje2ykdXU0B358-ROjFmBOku-fm1wOA3yktFHeWTIL/exec?id=" + id)
         .then(json => {
           if (json.ok && json.payload && json.payload.p) {
             setProfile(json.payload.p);
@@ -657,7 +656,7 @@ export default function StarPathC() {
       counselorNote: (P.summary?.counselorNote || "").slice(0, 300),
       parentPhone:   parentPhone || "",
     });
-    fetch("https://script.google.com/macros/s/AKfycbx3F1M49ZZ9263YwuLbZ_Qiu_2bQ-DN7Dpmz3HBIhCdLpKSkkRmqtJGr9SsvVi5aY2n/exec?" + params.toString(), { method: "GET", mode: "no-cors" }).catch(() => {});
+    fetch("https://script.google.com/macros/s/AKfycbxfX4wPoLml4SffUSibaL63thjje2ykdXU0B358-ROjFmBOku-fm1wOA3yktFHeWTIL/exec?" + params.toString(), { method: "GET", mode: "no-cors" }).catch(() => {});
   };
 
   // Build plain-text report summary for clipboard / email
@@ -736,6 +735,25 @@ export default function StarPathC() {
     });
   };
 
+  // JSONP — script标签加载，Safari/Chrome/手机全兼容，无CORS问题
+  const jsonpCall = (url) => new Promise((resolve, reject) => {
+    const cbName = 'cb' + Date.now();
+    const script = document.createElement('script');
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('timeout'));
+    }, 15000);
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+    window[cbName] = (data) => { cleanup(); resolve(data); };
+    script.onerror = () => { cleanup(); reject(new Error('load error')); };
+    script.src = url + '&callback=' + cbName;
+    document.head.appendChild(script);
+  });
+
   const shareReport = async () => {
     if (!profile || shareLoading) return;
     setShareLoading(true);
@@ -748,8 +766,8 @@ export default function StarPathC() {
     let reportUrl;
     try {
       const payload = JSON.stringify({ p: profile, n: name, l: lang });
-      const res = await fetch("https://script.google.com/macros/s/AKfycbx3F1M49ZZ9263YwuLbZ_Qiu_2bQ-DN7Dpmz3HBIhCdLpKSkkRmqtJGr9SsvVi5aY2n/exec?action=save&data=" + encodeURIComponent(payload));
-      const json = await res.json();
+      const url = "https://script.google.com/macros/s/AKfycbxfX4wPoLml4SffUSibaL63thjje2ykdXU0B358-ROjFmBOku-fm1wOA3yktFHeWTIL/exec?action=save&data=" + encodeURIComponent(payload);
+      const json = await jsonpCall(url);
       if (json.ok && json.id) {
         reportUrl = baseUrl + '#id=' + json.id;
       } else {
