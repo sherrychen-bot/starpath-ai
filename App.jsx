@@ -687,7 +687,8 @@ export default function StarPathC() {
     const to = sendMode === "own" ? encodeURIComponent(cEmail) : encodeURIComponent("info@starwise-edu.com");
     const mailtoUrl = `mailto:${to}?subject=${subject}&body=${body}`;
     // window.location.href works on both desktop and mobile
-    window.location.href = mailtoUrl;
+    // Use window.open for mailto to avoid navigating away and losing React state
+    window.open(mailtoUrl, '_self');
     setTimeout(() => { setSending(false); setSent(true); }, 1000);
   };
 
@@ -758,6 +759,9 @@ export default function StarPathC() {
   const downloadPDF = () => {
     if (!profile) return;
     setDownloading(true);
+    // Open window IMMEDIATELY inside user gesture — before any async/heavy work
+    // Browsers block window.open() if called after async delay
+    const win = window.open('', '_blank');
     const P = profile;
     const zh = lang === "zh";
     const studentName = name || (zh ? "学生" : "Student");
@@ -1015,14 +1019,13 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
 <script>document.title="${docTitle}";</script>
 </body></html>`;
 
-    // Open new window and write HTML directly — blob: URLs blocked by CSP on Cloudflare Pages
-    const win = window.open('', '_blank');
+    // Write HTML into the window opened at the top of the function (inside user gesture)
     if (win) {
       win.document.open();
       win.document.write(html);
       win.document.close();
     } else {
-      // Popup blocked fallback: offer download as .html file
+      // Popup was blocked — fallback: download as .html file
       const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1793,12 +1796,13 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
                         <div className="sl">{zh?"邀请好友测评":"INVITE A FRIEND"}</div>
                         <p style={{fontSize:12,color:G.muted,lineHeight:1.75,marginBottom:10}}>{t.inviteDesc}</p>
                         <button onClick={()=>{
-                          const baseUrl = window.location.href.split('#')[0];
+                          const baseUrl = window.location.href.split('#')[0].split('?')[0];
                           const zh2 = lang==='zh';
                           const archetype2 = profile?.snap?.archetype || profile?.snap?.personality || "";
+                          // Invite shares homepage link (no report), so friend can take their own test
                           const inviteMsg = zh2
-                            ? `嗨！我刚做了一个很有意思的成长测评，${archetype2 ? `我的成长原型是「${archetype2}」` : "快来试试"}！\n你也来测测看吧 👇\n${baseUrl}`
-                            : `Hey! I took this awesome free assessment — ${archetype2 ? `my archetype is "${archetype2}"` : "you should try it"}!\nFind out yours here 👇\n${baseUrl}`;
+                            ? `嗨！我刚做了一个很有意思的升学成长测评，${archetype2 ? `测出我的原型是「${archetype2}」` : "快来试试"}！\n免费15分钟，发现你的成长方向 👇\n${baseUrl}`
+                            : `Hey! I just did this free 15-min assessment — ${archetype2 ? `my archetype is "${archetype2}"` : "you should try it"}!\nFind your direction here 👇\n${baseUrl}`;
                           navigator.clipboard.writeText(inviteMsg).then(()=>{
                             setInviteCopied(true); setTimeout(()=>setInviteCopied(false),3000);
                           }).catch(()=>{
@@ -1818,8 +1822,8 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
                       <div style={{marginBottom:14}}>
                         <p style={{fontSize:12,color:G.muted,lineHeight:1.75,marginBottom:10}}>{t.shareDesc}</p>
                         <button onClick={shareReport}
-                          style={{width:"100%",padding:"11px 16px",borderRadius:10,background:shareCopied?`${G.green}08`:"rgba(26,58,42,.04)",border:`1.5px solid ${shareCopied?G.green+"50":"rgba(26,58,42,.1)"}`,fontSize:13,fontWeight:700,color:shareCopied?G.green:G.greenDk,cursor:"pointer",fontFamily:"'Nunito',sans-serif",transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                          {shareCopied ? <>✓ {t.shareCopied}</> : shareLoading ? (zh?"生成中…":"Generating…") : <>🔗 {t.shareLink}</>}
+                          style={{width:"100%",padding:"12px 16px",borderRadius:10,background:shareCopied?`${G.green}15`:G.greenDk,border:`1.5px solid ${shareCopied?G.green+"50":G.greenDk}`,fontSize:13,fontWeight:700,color:shareCopied?G.green:"#fff",cursor:"pointer",fontFamily:"'Nunito',sans-serif",transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                          {shareCopied ? <>✓ {t.shareCopied}</> : shareLoading ? (zh?"生成链接中…":"Generating link…") : <>🔗 {zh?"分享我的完整报告 →":"Share My Full Report →"}</>}
                         </button>
                       </div>
 
