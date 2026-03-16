@@ -461,16 +461,12 @@ export default function StarPathC() {
         if (hash.startsWith('#id=')) {
           const id = hash.slice(4);
           try {
-            const res = await fetch('https://script.google.com/macros/s/AKfycby092STDn5I6V6UJIbwLCrLjOD2KmG1RbM4kcFXUfg5-43cQKoQHbIu423kHMFcE2pv/exec?id=' + id);
-            const rawText = await res.text();
-            if (rawText && rawText !== 'NOT_FOUND') {
-              const payload = JSON.parse(rawText);
-              if (payload && payload.p) {
-                setProfile(payload.p);
-                if (payload.n) setName(payload.n);
-                if (payload.l) setLang(payload.l);
-                setPhase('result'); setTab('summary');
-              }
+            const result = await gasCall({ id: id });
+            if (result && result.ok && result.payload && result.payload.p) {
+              setProfile(result.payload.p);
+              if (result.payload.n) setName(result.payload.n);
+              if (result.payload.l) setLang(result.payload.l);
+              setPhase('result'); setTab('summary');
             }
           } catch(e) { console.log('Load failed:', e); }
           return;
@@ -583,6 +579,52 @@ export default function StarPathC() {
     setTab("summary");
   };
 
+
+  // ── GAS helpers — two strategies to bypass CORS ─────────────────────────────
+  // Strategy A: fetch no-cors — fire-and-forget, no response (used for leads)
+  // Strategy B: hidden iframe — GAS page loads inside iframe, postMessage back
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbx3F1M49ZZ9263YwuLbZ_Qiu_2bQ-DN7Dpmz3HBIhCdLpKSkkRmqtJGr9SsvVi5aY2n/exec";
+
+  // gasNoCors: send data, don't need a response back (leads)
+  const gasNoCors = (params) => {
+    const qs = new URLSearchParams(params).toString();
+    return fetch(GAS_URL + '?' + qs, { method: 'GET', mode: 'no-cors' })
+      .catch(() => {
+        // absolute fallback: img pixel
+        const img = new Image();
+        img.src = GAS_URL + '?' + qs;
+      });
+  };
+
+  // gasCall: send params, get JSON response back via iframe
+  // GAS must set the response body to a full HTML page that calls:
+  //   window.parent.postMessage(JSON.stringify(data), '*')
+  const gasCall = (params) => new Promise((resolve, reject) => {
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;border:none;';
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('GAS timeout'));
+    }, 20000);
+    function cleanup() {
+      clearTimeout(timer);
+      window.removeEventListener('message', onMsg);
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+    }
+    function onMsg(e) {
+      if (e.source !== iframe.contentWindow) return;
+      try {
+        const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+        if (data && data._gasReply) { cleanup(); resolve(data); }
+      } catch(err) {}
+    }
+    window.addEventListener('message', onMsg);
+    const qs = new URLSearchParams({ ...params, _iframe: '1' }).toString();
+    iframe.src = GAS_URL + '?' + qs;
+    document.body.appendChild(iframe);
+  });
+
+
   const sendLeadNotification = (studentName, studentEmail, P, lang) => {
     if (!P) return;
     const zh = lang === "zh";
@@ -613,8 +655,8 @@ export default function StarPathC() {
       `—— StarPath AI · by StarWise`,
     ].join("\n");
 
-    // Send lead to Google Sheets — use both img pixel (CORS-free) + fetch for reliability
-    const params = new URLSearchParams({
+    // Send lead via no-cors fetch — fire-and-forget, no response needed
+    gasNoCors({
       name:          studentName,
       email:         studentEmail,
       grade:         P.snap?.grade || "",
@@ -626,12 +668,6 @@ export default function StarPathC() {
       counselorNote: (P.summary?.counselorNote || "").slice(0, 300),
       parentPhone:   parentPhone || "",
     });
-    const gasUrl = "https://script.google.com/macros/s/AKfycby092STDn5I6V6UJIbwLCrLjOD2KmG1RbM4kcFXUfg5-43cQKoQHbIu423kHMFcE2pv/exec?" + params.toString();
-    // Primary: fetch with no-cors so it fires even if CORS header missing
-    fetch(gasUrl, { method: 'GET', mode: 'no-cors' }).catch(() => {});
-    // Secondary fallback: img pixel
-    const img = new Image();
-    img.src = gasUrl;
   };
 
   // Build plain-text report summary for clipboard / email
@@ -687,8 +723,7 @@ export default function StarPathC() {
     const to = sendMode === "own" ? encodeURIComponent(cEmail) : encodeURIComponent("info@starwise-edu.com");
     const mailtoUrl = `mailto:${to}?subject=${subject}&body=${body}`;
     // window.location.href works on both desktop and mobile
-    // Use window.open for mailto to avoid navigating away and losing React state
-    window.open(mailtoUrl, '_self');
+    window.open(mailtoUrl, '_self'); // use _self but won't unload SPA
     setTimeout(() => { setSending(false); setSent(true); }, 1000);
   };
 
@@ -719,25 +754,22 @@ export default function StarPathC() {
       const archetype = profile.snap?.archetype || profile.snap?.personality || "";
       const top1 = profile.majors?.[0]?.name || "";
 
-      // Save report to server and get short 8-char ID
+      // Save report via JSONP — bypasses CORS completely
       const payload = JSON.stringify({ p: profile, n: name, l: lang });
+      const baseUrl = window.location.href.split('#')[0].split('?')[0];
       let reportUrl;
       try {
-        const saveUrl = "https://script.google.com/macros/s/AKfycby092STDn5I6V6UJIbwLCrLjOD2KmG1RbM4kcFXUfg5-43cQKoQHbIu423kHMFcE2pv/exec?action=save&data=" + encodeURIComponent(payload);
-        const res = await fetch(saveUrl, { redirect: 'follow' });
-        const reportId = (await res.text()).trim();
-        if (reportId && reportId.length <= 12 && /^[a-zA-Z0-9]+$/.test(reportId)) {
-          // Got short ID from server
-          reportUrl = window.location.href.split('#')[0].split('?')[0] + '#id=' + reportId;
+        const result = await gasCall({ action: 'save', data: payload });
+        if (result && result.ok && result.id) {
+          reportUrl = baseUrl + '#id=' + result.id;
         } else {
-          throw new Error('bad id: ' + reportId);
+          throw new Error('no id: ' + JSON.stringify(result));
         }
       } catch(saveErr) {
-        console.warn('Save to server failed, using URL encoding:', saveErr);
-        // Fallback: encode full report in URL hash
+        console.warn('GAS save failed, falling back to URL encoding:', saveErr);
         const encoded = btoa(unescape(encodeURIComponent(payload)))
           .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
-        reportUrl = window.location.href.split('#')[0].split('?')[0] + '#report=' + encoded;
+        reportUrl = baseUrl + '#report=' + encoded;
       }
 
       const msg = zh2
@@ -759,9 +791,9 @@ export default function StarPathC() {
   const downloadPDF = () => {
     if (!profile) return;
     setDownloading(true);
-    // Open window IMMEDIATELY inside user gesture — before any async/heavy work
-    // Browsers block window.open() if called after async delay
-    const win = window.open('', '_blank');
+    // Must call window.open() synchronously inside the click handler (user gesture).
+    // Browsers block it if called after any async work or heavy computation.
+    const pdfWin = window.open('', '_blank');
     const P = profile;
     const zh = lang === "zh";
     const studentName = name || (zh ? "学生" : "Student");
@@ -1019,13 +1051,13 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
 <script>document.title="${docTitle}";</script>
 </body></html>`;
 
-    // Write HTML into the window opened at the top of the function (inside user gesture)
-    if (win) {
-      win.document.open();
-      win.document.write(html);
-      win.document.close();
+    // Write HTML into the window we already opened at the top of this function
+    if (pdfWin) {
+      pdfWin.document.open();
+      pdfWin.document.write(html);
+      pdfWin.document.close();
     } else {
-      // Popup was blocked — fallback: download as .html file
+      // Popup blocked — fallback: download as .html file
       const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1796,13 +1828,12 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
                         <div className="sl">{zh?"邀请好友测评":"INVITE A FRIEND"}</div>
                         <p style={{fontSize:12,color:G.muted,lineHeight:1.75,marginBottom:10}}>{t.inviteDesc}</p>
                         <button onClick={()=>{
-                          const baseUrl = window.location.href.split('#')[0].split('?')[0];
+                          const baseUrl = window.location.href.split('#')[0];
                           const zh2 = lang==='zh';
                           const archetype2 = profile?.snap?.archetype || profile?.snap?.personality || "";
-                          // Invite shares homepage link (no report), so friend can take their own test
                           const inviteMsg = zh2
-                            ? `嗨！我刚做了一个很有意思的升学成长测评，${archetype2 ? `测出我的原型是「${archetype2}」` : "快来试试"}！\n免费15分钟，发现你的成长方向 👇\n${baseUrl}`
-                            : `Hey! I just did this free 15-min assessment — ${archetype2 ? `my archetype is "${archetype2}"` : "you should try it"}!\nFind your direction here 👇\n${baseUrl}`;
+                            ? `嗨！我刚做了一个很有意思的成长测评，${archetype2 ? `我的成长原型是「${archetype2}」` : "快来试试"}！\n你也来测测看吧 👇\n${baseUrl}`
+                            : `Hey! I took this awesome free assessment — ${archetype2 ? `my archetype is "${archetype2}"` : "you should try it"}!\nFind out yours here 👇\n${baseUrl}`;
                           navigator.clipboard.writeText(inviteMsg).then(()=>{
                             setInviteCopied(true); setTimeout(()=>setInviteCopied(false),3000);
                           }).catch(()=>{
@@ -1822,8 +1853,8 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
                       <div style={{marginBottom:14}}>
                         <p style={{fontSize:12,color:G.muted,lineHeight:1.75,marginBottom:10}}>{t.shareDesc}</p>
                         <button onClick={shareReport}
-                          style={{width:"100%",padding:"12px 16px",borderRadius:10,background:shareCopied?`${G.green}15`:G.greenDk,border:`1.5px solid ${shareCopied?G.green+"50":G.greenDk}`,fontSize:13,fontWeight:700,color:shareCopied?G.green:"#fff",cursor:"pointer",fontFamily:"'Nunito',sans-serif",transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                          {shareCopied ? <>✓ {t.shareCopied}</> : shareLoading ? (zh?"生成链接中…":"Generating link…") : <>🔗 {zh?"分享我的完整报告 →":"Share My Full Report →"}</>}
+                          style={{width:"100%",padding:"11px 16px",borderRadius:10,background:shareCopied?`${G.green}08`:"rgba(26,58,42,.04)",border:`1.5px solid ${shareCopied?G.green+"50":"rgba(26,58,42,.1)"}`,fontSize:13,fontWeight:700,color:shareCopied?G.green:G.greenDk,cursor:"pointer",fontFamily:"'Nunito',sans-serif",transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                          {shareCopied ? <>✓ {t.shareCopied}</> : shareLoading ? (zh?"生成中…":"Generating…") : <>🔗 {t.shareLink}</>}
                         </button>
                       </div>
 
