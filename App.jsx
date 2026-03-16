@@ -273,70 +273,77 @@ const buildPrompt = (lang) => {
   const zh = lang === "zh";
   return `You are StarPath AI, a college admissions expert at StarWise International Education. Analyze student responses and return ONLY valid JSON — no markdown, no backticks.
 
-Return this exact structure:
+Return this exact JSON structure (pure JSON only, no markdown, no backticks, no comments):
 {
   "snap": {
     "grade": "string",
-    "schoolType": "string key",
-    "archetype": "${zh?"从10种成长原型中选最匹配的一种：系统探索者/分析型战略者/创造型建造者/影响力领导者/全球思考者/科学探索者/叙事表达者/跨界创新者/共情行动者/独立开拓者":"One of: Systems Explorer / Analytical Strategist / Creative Builder / Impact Leader / Global Thinker / Scientific Investigator / Storytelling Communicator / Interdisciplinary Innovator / Empathy Advocate / Independent Pioneer"}",
+    "schoolType": "string",
+    "archetype": "${zh?"从10种成长原型中选最匹配：系统探索者/分析型战略者/创造型建造者/影响力领导者/全球思考者/科学探索者/叙事表达者/跨界创新者/共情行动者/独立开拓者":"One of: Systems Explorer / Analytical Strategist / Creative Builder / Impact Leader / Global Thinker / Scientific Investigator / Storytelling Communicator / Interdisciplinary Innovator / Empathy Advocate / Independent Pioneer"}",
     "personality": "${zh?"3-4字人格标签，如：分析型探索者":"3-5 word label, e.g. Analytical Explorer"}",
-    "tagline": "${zh?"2句话画像，让学生感到被深度看见":"2 sentences, warm, make student feel truly seen"}",
+    "tagline": "${zh?"2-3句温暖画像，让学生感到被真正看见，必须引用具体回答":"2-3 warm sentences making student feel truly seen, must reference specific answers"}",
+    "thinkingStyle": "${zh?"2句描述思维方式，结合科目偏好和课堂喜好":"2 sentences on thinking style, connecting subject and classroom preferences"}",
     "strengths": [
-      {"name":"${zh?"优势名称，4字内":"3-4 word name"}","desc":"${zh?"一句话说明，结合具体回答":"1 sentence with specific evidence"}"},
+      {"name":"${zh?"4字内优势名":"3-4 word strength name"}","desc":"${zh?"2句说明，必须引用学生具体回答作为证据":"2 sentences, must cite specific student answer as evidence"}"},
       {"name":"","desc":""},
       {"name":"","desc":""}
     ],
-    "motivation": "${zh?"核心驱动，1句话":"Core drive, one sentence"}"
+    "motivation": "${zh?"2句话描述核心驱动力，基于价值观和活动回答":"Core motivation, 2 sentences grounded in values + activity answers"}"
   },
-  "radar": {
-    "academicCuriosity": 75,
-    "analyticalStrength": 80,
-    "creativity": 68,
-    "socialImpactDrive": 72,
-    "leadership": 65
-  },
+  "radar": {"academicCuriosity":75,"analyticalStrength":80,"creativity":68,"socialImpactDrive":72,"leadership":65},
   "summary": {
-    "headline": "${zh?"2-3句综合画像，温暖有洞察":"2-3 warm insightful sentences"}",
-    "keyInsight": "${zh?"最重要洞察，2句，必须引用具体回答":"Single most important insight, 2 sentences, cite specific answers"}",
-    "watchOut": "${zh?"一个成长点，友善直接":"One gentle growth area"}",
-    "counselorNote": "${zh?"给顾问的专业备注，1-2句":"Professional note for counselor, 1-2 sentences"}"
+    "headline": "${zh?"3句温暖有深度的综合画像，必须非常具体，不能泛泛而谈":"3 sentences warm and insightful profile — must be highly specific, no generic statements"}",
+    "keyInsight": "${zh?"最重要的一个洞察，3句，必须点名引用2-3个具体回答，说明为什么这个组合独特":"Most important insight, 3 sentences, explicitly reference 2-3 specific answers, explain why this combination is unique"}",
+    "watchOut": "${zh?"一个成长盲点或待强化的地方，2句，友善但直接，给出具体建议":"One blind spot or growth area, 2 sentences, kind but direct with concrete suggestion"}",
+    "counselorNote": "${zh?"给顾问的专业备注，2-3句，含学生最独特的特质和1个具体策略建议":"Counselor note, 2-3 sentences: most distinctive trait + 1 specific strategic suggestion"}"
   },
   "academic": {
-    "directions": ["${zh?"4-5个潜在学术方向，如 Environmental Science":"4-5 academic directions, e.g. Environmental Science"}"],
-    "curiosity": "${zh?"基于回答的真实兴趣，2句":"True intellectual curiosity, 2 sentences"}",
-    "learningStyle": "${zh?"学习风格，结合课堂偏好，1-2句":"Learning style, 1-2 sentences"}"
+    "directions": ["${zh?"4-5个潜在学术方向，每个写具体名称":"4-5 specific academic directions"}"],
+    "curiosity": "${zh?"3句描述真实学术兴趣，必须基于具体回答，说明这个兴趣从何而来":"True intellectual curiosity, 3 sentences grounded in specific answers, explain origin of interest"}",
+    "learningStyle": "${zh?"2句描述学习风格，结合课堂偏好回答":"Learning style, 2 sentences citing classroom preference answers"}"
   },
   "majors": [
-    {"name":"","fit":90,"why":"${zh?"为什么适合，2句":"Why it fits, 2 sentences"}","courses":["",""],"careers":["",""]}
+    {
+      "name": "",
+      "fit": 90,
+      "why": "${zh?"3句说明为什么匹配，每句针对不同维度（学科兴趣/优势/价值观），引用具体回答":"3 sentences on fit — each targeting different dimension (interest/strength/values), cite specific answers"}",
+      "courses": ["${zh?"3门具体课程名":"3 specific course names"}","",""],
+      "careers": ["${zh?"3个具体职业方向":"3 specific career paths"}","",""]
+    }
   ],
   "growth": {
-    "projects": ["${zh?"3个具体项目创意，可操作":"3 specific actionable project ideas"}"],
-    "activities": ["${zh?"4-5个推荐活动类型":"4-5 suggested activity types"}"],
-    "narrative": "${zh?"活动主线叙事建议，2句":"Activity narrative theme, 2 sentences"}"
+    "projects": ["${zh?"3个具体可操作的项目创意，格式：项目名：1句说明":"3 specific actionable ideas, format: Name: 1-sentence description"}"],
+    "activities": ["${zh?"4个推荐活动，每个格式：活动类型 — 1句为什么适合这个学生":"4 recommended activities, format: Type — 1 sentence why it fits this student"}"],
+    "narrative": "${zh?"3句话描述活动叙事主线，如何把所有活动串联成一个有力故事":"Narrative theme, 3 sentences on how to connect all activities into a compelling story"}"
   },
   "ec": {
-    "assessment": "${zh?"活动现状评估，2句":"Activity assessment, 2 sentences"}",
-    "gaps": ["${zh?"1-2个需要补强":"1-2 gaps"}"],
+    "assessment": "${zh?"3句评估现有活动，直接说出优势和不足":"Activity assessment, 3 sentences — strengths and gaps, be direct"}",
+    "narrative": "${zh?"2句概括叙事主线":"Narrative theme summary, 2 sentences"}",
+    "gaps": ["${zh?"2个具体需要补强的方向":"2 specific gaps to address"}"],
     "activities": [
-      {"type":"","action":"${zh?"具体可操作":"Specific actionable"}","why":"${zh?"1句":"1 sentence"}","when":"${zh?"时间":"When"}"}
+      {"type":"${zh?"活动类型":"Activity type"}","action":"${zh?"2句具体行动，包括第一步怎么做":"2 sentences: specific action + first step"}","why":"${zh?"1句：为什么特别适合这个学生":"1 sentence: why it fits this specific student"}","when":"${zh?"建议时间段":"Suggested timeline"}"},
+      {"type":"","action":"","why":"","when":""},
+      {"type":"","action":"","why":"","when":""}
     ]
   },
   "next": {
-    "month": ["${zh?"近期2-3件具体行动":"2-3 specific near-term actions"}"],
-    "key": "${zh?"最关键一件事":"Single most important thing"}"
+    "month": ["${zh?"3件近期具体行动，每件附1句说明为什么现在做":"3 near-term actions, each with 1-sentence explanation of why now"}"],
+    "key": "${zh?"2句话：申请前最关键的一件事，说明为什么":"2 sentences: single most important thing before applications and why"}"
   }
 }
 
-Rules:
-- snap.strengths: exactly 3 objects with name+desc, desc must cite specific answers
-- radar: exactly these 5 keys, integers 40-95
+RULES — strictly follow all:
+- snap.strengths: exactly 3 items; each desc MUST name a specific answer the student gave
+- radar: exactly these 5 keys, values 40-95
 - academic.directions: exactly 4-5 items
-- growth.projects: exactly 3 specific actionable ideas
-- majors: exactly 4, sorted by fit desc
-- ec.activities: exactly 3
-- Every insight MUST reference specific student answers — zero generic advice
-- Tone: warm encouraging mentor who truly sees this student
-- Pure JSON only`;
+- majors: exactly 4 items sorted by fit descending; each has 3 courses + 3 careers
+- growth.projects: exactly 3 strings
+- growth.activities: exactly 4 strings  
+- ec.activities: exactly 3 items
+- next.month: exactly 3 strings
+- EVERY text field must be substantive — minimum 1 full sentence, never a fragment
+- ZERO generic advice — every insight must be traceable to a specific answer
+- Tone: warm, direct mentor who truly knows this individual student
+- Output pure JSON only`;
 };
 
 // ─── CSS ──────────────────────────────────────────────────────────────────────
@@ -458,19 +465,8 @@ export default function StarPathC() {
         const hash = window.location.hash;
         if (!hash) return;
         // Short ID format: #id=a1b2c3d4
-        if (hash.startsWith('#id=')) {
-          const id = hash.slice(4);
-          try {
-            const result = await gasCall({ id: id });
-            if (result && result.ok && result.payload && result.payload.p) {
-              setProfile(result.payload.p);
-              if (result.payload.n) setName(result.payload.n);
-              if (result.payload.l) setLang(result.payload.l);
-              setPhase('result'); setTab('summary');
-            }
-          } catch(e) { console.log('Load failed:', e); }
-          return;
-        }
+        // #id= format deprecated (GAS not accessible from browser due to CORS+X-Frame-Options)
+        // All shared links now use #report= URL encoding
         // Encoded format: #report=...
         if (hash.startsWith('#report=')) {
           const raw = hash.slice(8).replace(/-/g, '+').replace(/_/g, '/');
@@ -580,49 +576,16 @@ export default function StarPathC() {
   };
 
 
-  // ── GAS helpers — two strategies to bypass CORS ─────────────────────────────
-  // Strategy A: fetch no-cors — fire-and-forget, no response (used for leads)
-  // Strategy B: hidden iframe — GAS page loads inside iframe, postMessage back
+  // ── GAS helper — no-cors fetch (fire-and-forget, leads only) ────────────────
   const GAS_URL = "https://script.google.com/macros/s/AKfycbx3F1M49ZZ9263YwuLbZ_Qiu_2bQ-DN7Dpmz3HBIhCdLpKSkkRmqtJGr9SsvVi5aY2n/exec";
 
-  // gasNoCors: send data, don't need a response back (leads)
+  // gasNoCors: for lead saving — no response needed, no-cors bypasses CORS restriction
   const gasNoCors = (params) => {
     const qs = new URLSearchParams(params).toString();
-    return fetch(GAS_URL + '?' + qs, { method: 'GET', mode: 'no-cors' })
-      .catch(() => {
-        // absolute fallback: img pixel
-        const img = new Image();
-        img.src = GAS_URL + '?' + qs;
-      });
+    fetch(GAS_URL + '?' + qs, { method: 'GET', mode: 'no-cors' }).catch(() => {
+      const img = new Image(); img.src = GAS_URL + '?' + qs; // img fallback
+    });
   };
-
-  // gasCall: send params, get JSON response back via iframe
-  // GAS must set the response body to a full HTML page that calls:
-  //   window.parent.postMessage(JSON.stringify(data), '*')
-  const gasCall = (params) => new Promise((resolve, reject) => {
-    const iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;border:none;';
-    const timer = setTimeout(() => {
-      cleanup();
-      reject(new Error('GAS timeout'));
-    }, 20000);
-    function cleanup() {
-      clearTimeout(timer);
-      window.removeEventListener('message', onMsg);
-      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-    }
-    function onMsg(e) {
-      if (e.source !== iframe.contentWindow) return;
-      try {
-        const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
-        if (data && data._gasReply) { cleanup(); resolve(data); }
-      } catch(err) {}
-    }
-    window.addEventListener('message', onMsg);
-    const qs = new URLSearchParams({ ...params, _iframe: '1' }).toString();
-    iframe.src = GAS_URL + '?' + qs;
-    document.body.appendChild(iframe);
-  });
 
 
   const sendLeadNotification = (studentName, studentEmail, P, lang) => {
@@ -746,47 +709,60 @@ export default function StarPathC() {
     });
   };
 
-  const shareReport = async () => {
+  const shareReport = () => {
     if (!profile || shareLoading) return;
     setShareLoading(true);
-    try {
-      const zh2 = lang === "zh";
-      const archetype = profile.snap?.archetype || profile.snap?.personality || "";
-      const top1 = profile.majors?.[0]?.name || "";
+    const zh2 = lang === "zh";
+    const archetype = profile.snap?.archetype || profile.snap?.personality || "";
+    const top1 = profile.majors?.[0]?.name || "";
 
-      // Save report via JSONP — bypasses CORS completely
-      const payload = JSON.stringify({ p: profile, n: name, l: lang });
-      const baseUrl = window.location.href.split('#')[0].split('?')[0];
-      let reportUrl;
-      try {
-        const result = await gasCall({ action: 'save', data: payload });
-        if (result && result.ok && result.id) {
-          reportUrl = baseUrl + '#id=' + result.id;
-        } else {
-          throw new Error('no id: ' + JSON.stringify(result));
-        }
-      } catch(saveErr) {
-        console.warn('GAS save failed, falling back to URL encoding:', saveErr);
-        const encoded = btoa(unescape(encodeURIComponent(payload)))
-          .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
-        reportUrl = baseUrl + '#report=' + encoded;
-      }
+    // Encode full report in URL hash — 100% client-side, no server needed
+    const payload = JSON.stringify({ p: profile, n: name, l: lang });
+    const baseUrl = window.location.href.split('#')[0].split('?')[0];
+    const encoded = btoa(unescape(encodeURIComponent(payload)))
+      .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+    const reportUrl = baseUrl + '#report=' + encoded;
 
-      const msg = zh2
-        ? `嗨！我刚完成了星途潜能测评 🌟\n\n我的成长原型是「${archetype}」，最匹配的方向是 ${top1}。\n\n点击查看我的完整成长报告 👇\n${reportUrl}`
-        : `Hey! I just completed the StarPath Finder assessment 🌟\n\nMy archetype is "${archetype}" and top match is ${top1}.\n\nView my full report here 👇\n${reportUrl}`;
+    const msg = zh2
+      ? `我的星途成长报告 🌟\n\n成长原型：「${archetype}」\n最匹配方向：${top1}\n\n👇 点击查看完整报告（含专业匹配、成长路径、行动计划）\n${reportUrl}`
+      : `My StarPath Growth Report 🌟\n\nArchetype: ${archetype}\nTop major match: ${top1}\n\n👇 View my full report (majors, growth path, action plan)\n${reportUrl}`;
 
-      navigator.clipboard.writeText(msg).then(()=>{
-        setShareCopied(true); setTimeout(()=>setShareCopied(false),3000);
-      }).catch(()=>{
-        const ta=document.createElement('textarea');
-        ta.value=msg;ta.style.position='fixed';ta.style.opacity='0';
-        document.body.appendChild(ta);ta.select();document.execCommand('copy');
-        document.body.removeChild(ta);
-        setShareCopied(true);setTimeout(()=>setShareCopied(false),3000);
-      });
-    } catch(e) { console.error(e); } finally { setShareLoading(false); }
-  };;;;
+    // Cross-browser clipboard — execCommand is synchronous and works in ALL browsers
+    // (Chrome, Safari, Firefox, Edge, WeChat, mobile browsers)
+    const ta = document.createElement('textarea');
+    ta.value = msg;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:0;left:0;width:2em;height:2em;padding:0;border:none;outline:none;box-shadow:none;background:transparent;';
+    document.body.appendChild(ta);
+    // iOS Safari needs special handling
+    if (navigator.userAgent.match(/ipad|iphone/i)) {
+      const range = document.createRange();
+      range.selectNodeContents(ta);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      ta.setSelectionRange(0, 999999);
+    } else {
+      ta.select();
+    }
+    let copied = false;
+    try { copied = document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta);
+
+    if (copied) {
+      setShareCopied(true); setTimeout(()=>setShareCopied(false), 3000); setShareLoading(false);
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      // Fallback: modern clipboard API (requires HTTPS, may need user permission)
+      navigator.clipboard.writeText(msg)
+        .then(()=>{ setShareCopied(true); setTimeout(()=>setShareCopied(false),3000); })
+        .catch(()=>{ window.prompt(zh2?'请手动复制以下链接：':'Copy this link manually:', reportUrl); })
+        .finally(()=>setShareLoading(false));
+    } else {
+      // Last resort: prompt dialog
+      window.prompt(zh2?'请手动复制以下链接：':'Copy this link manually:', reportUrl);
+      setShareLoading(false);
+    }
+  };
 
   const downloadPDF = () => {
     if (!profile) return;
@@ -1048,7 +1024,7 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
   </div>
 </div>
 <style>@media print{#pbar{display:none!important;}}body{padding-bottom:48px;}</style>
-<script>document.title="${docTitle}";</script>
+
 </body></html>`;
 
     // Write HTML into the window we already opened at the top of this function
@@ -1056,6 +1032,7 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
       pdfWin.document.open();
       pdfWin.document.write(html);
       pdfWin.document.close();
+      try { pdfWin.document.title = docTitle; } catch(e) {}
     } else {
       // Popup blocked — fallback: download as .html file
       const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
@@ -1190,7 +1167,7 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
       <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}
         style={{minHeight:"100vh",background:G.cream,fontFamily:"'Nunito',sans-serif",display:"flex",flexDirection:"column"}}>
         <style>{CSS}</style>
-        <button className="lbtn" onClick={()=>{setLang(l=>l==="zh"?"en":"zh");resetAll();}}>{t.lang}</button>
+        <button className="lbtn" onClick={()=>{setLang(l=>l==="zh"?"en":"zh");}}>{t.lang}</button>
 
         {/* Sticky header */}
         <div style={{position:"sticky",top:0,background:"rgba(245,249,243,.96)",backdropFilter:"blur(14px)",zIndex:10,borderBottom:"1px solid rgba(26,58,42,.06)"}}>
@@ -1495,12 +1472,22 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
             <div className="anim-fade">
 
               {/* 1. Key Insight */}
-              <div className="card" style={{borderLeft:`4px solid ${G.green}`}}>
+              <div className="card" style={{borderLeft:`4px solid ${G.green}`,padding:"24px 22px 20px"}}>
                 <div className="sl">{t.lInsight}</div>
-                <p style={{fontSize:15,lineHeight:1.9,color:G.greenDk,fontWeight:600,marginBottom:14}}>{P.summary?.headline}</p>
-                <div style={{padding:"13px 16px",borderRadius:10,background:"rgba(106,175,61,.05)",border:"1px solid rgba(106,175,61,.15)"}}>
-                  <p style={{fontSize:13,lineHeight:1.85,color:G.text}}>{P.summary?.keyInsight}</p>
+                <p style={{fontSize:16,lineHeight:1.85,color:G.greenDk,fontWeight:700,marginBottom:16,letterSpacing:"-0.2px"}}>{P.summary?.headline}</p>
+                <div style={{padding:"14px 18px",borderRadius:12,background:"rgba(106,175,61,.05)",border:"1px solid rgba(106,175,61,.18)",marginBottom:P.summary?.watchOut?14:0}}>
+                  <div style={{fontSize:8,fontWeight:800,color:G.green,letterSpacing:2.5,marginBottom:8}}>✦ {zh?"核心洞察":"KEY INSIGHT"}</div>
+                  <p style={{fontSize:13.5,lineHeight:1.9,color:G.text}}>{P.summary?.keyInsight}</p>
                 </div>
+                {P.summary?.watchOut && (
+                  <div style={{padding:"12px 16px",borderRadius:10,background:"rgba(212,119,6,.04)",border:"1px solid rgba(212,119,6,.15)",display:"flex",gap:10,alignItems:"flex-start"}}>
+                    <span style={{fontSize:14,flexShrink:0,marginTop:1}}>💡</span>
+                    <div>
+                      <div style={{fontSize:8,fontWeight:800,color:G.amber,letterSpacing:2,marginBottom:5}}>{t.lGrowth.toUpperCase()}</div>
+                      <p style={{fontSize:12.5,lineHeight:1.8,color:G.text}}>{P.summary?.watchOut}</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* 2. Radar Chart */}
@@ -1563,30 +1550,28 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
               })()}
 
               {/* 3. Core Strengths */}
-              <div className="card">
+              <div className="card" style={{padding:"22px 22px 18px"}}>
                 <div className="sl">{t.lStrengths3}</div>
                 {(P.snap?.strengths||[]).map((s,i)=>{
                   const strength = typeof s === "object" ? s : {name:s, desc:""};
                   const colors = [G.green, G.blue, G.amber];
+                  const bgColors = ["rgba(106,175,61,.06)","rgba(59,130,246,.06)","rgba(217,119,6,.06)"];
+                  const bdColors = ["rgba(106,175,61,.18)","rgba(59,130,246,.18)","rgba(217,119,6,.18)"];
                   return (
-                    <div key={i} style={{display:"flex",gap:14,padding:"12px 0",borderBottom:i<(P.snap.strengths.length-1)?"1px solid rgba(26,58,42,.05)":"none",alignItems:"flex-start"}}>
-                      <div style={{width:36,height:36,borderRadius:10,background:`${colors[i%3]}15`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>
+                    <div key={i} style={{display:"flex",gap:14,padding:"14px 16px",borderRadius:12,background:bgColors[i%3],border:`1px solid ${bdColors[i%3]}`,marginBottom:i<(P.snap.strengths.length-1)?10:0,alignItems:"flex-start"}}>
+                      <div style={{width:38,height:38,borderRadius:10,background:`${colors[i%3]}20`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0,fontWeight:900,color:colors[i%3]}}>
                         {["✦","◈","◉"][i]}
                       </div>
-                      <div>
-                        <div style={{fontSize:13,fontWeight:800,color:G.greenDk,marginBottom:3}}>{strength.name}</div>
-                        <div style={{fontSize:12,color:G.muted,lineHeight:1.7}}>{strength.desc}</div>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:13.5,fontWeight:800,color:G.greenDk,marginBottom:5}}>{strength.name}</div>
+                        <div style={{fontSize:12.5,color:G.text,lineHeight:1.8}}>{strength.desc}</div>
                       </div>
                     </div>
                   );
                 })}
               </div>
 
-              {/* 4. Growth tip */}
-              <div className="card" style={{background:"rgba(212,119,6,.04)",borderColor:"rgba(212,119,6,.12)"}}>
-                <div className="sl">{t.lGrowth}</div>
-                <p style={{fontSize:13,color:G.text,lineHeight:1.75}}>{P.summary?.watchOut}</p>
-              </div>
+
 
               {/* CTA */}
               <div className="card" style={{background:G.greenDk,border:"none",textAlign:"center",padding:"32px 24px"}}>
@@ -1604,16 +1589,20 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
           {tab === "academic" && (
             <div className="anim-fade">
 
-              {/* Curiosity + Directions */}
-              <div className="card">
+              {/* Curiosity */}
+              <div className="card" style={{borderLeft:`4px solid ${G.blue}`,padding:"22px 22px 20px"}}>
                 <div className="sl">{t.lCurriosity}</div>
-                <p style={{fontSize:14,color:G.text,lineHeight:1.9,marginBottom:16}}>{P.academic?.curiosity}</p>
+                <p style={{fontSize:14,color:G.text,lineHeight:1.95,marginBottom:0}}>{P.academic?.curiosity}</p>
+              </div>
+
+              {/* Directions */}
+              <div className="card" style={{padding:"22px 22px 18px"}}>
                 <div className="sl">{t.lAcadDirs}</div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:P.academic?.learningStyle?0:0}}>
                   {(P.academic?.directions||P.academic?.domains||[]).map((d,i)=>(
-                    <div key={i} style={{padding:"12px 14px",borderRadius:10,background:"rgba(59,130,246,.05)",border:"1px solid rgba(59,130,246,.15)",display:"flex",alignItems:"center",gap:8}}>
-                      <span style={{color:G.blue,fontWeight:900,fontSize:14}}>◈</span>
-                      <span style={{fontSize:13,fontWeight:700,color:G.greenDk}}>{d}</span>
+                    <div key={i} style={{padding:"11px 14px",borderRadius:10,background:"rgba(59,130,246,.05)",border:"1px solid rgba(59,130,246,.14)",display:"flex",alignItems:"center",gap:8}}>
+                      <span style={{color:G.blue,fontWeight:900,fontSize:13,flexShrink:0}}>◈</span>
+                      <span style={{fontSize:12.5,fontWeight:700,color:G.greenDk,lineHeight:1.4}}>{d}</span>
                     </div>
                   ))}
                 </div>
@@ -1649,9 +1638,14 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
               </div>
 
               {/* Learning style */}
-              <div className="card" style={{background:"rgba(106,175,61,.03)",borderColor:"rgba(106,175,61,.12)"}}>
-                <div className="sl">{t.lStyle}</div>
-                <p style={{fontSize:13,color:G.text,lineHeight:1.85}}>{P.academic?.learningStyle}</p>
+              <div className="card" style={{background:"rgba(106,175,61,.03)",borderColor:"rgba(106,175,61,.15)",padding:"20px 22px"}}>
+                <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
+                  <div style={{width:36,height:36,borderRadius:10,background:"rgba(106,175,61,.12)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>🧠</div>
+                  <div>
+                    <div className="sl" style={{marginBottom:7}}>{t.lStyle}</div>
+                    <p style={{fontSize:13.5,color:G.text,lineHeight:1.9}}>{P.academic?.learningStyle}</p>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -1680,18 +1674,18 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
               </div>
 
               {/* Near-term Actions */}
-              <div className="card" style={{background:"rgba(106,175,61,.03)",borderColor:"rgba(106,175,61,.12)"}}>
+              <div className="card" style={{padding:"22px 22px 20px"}}>
                 <div className="sl">{t.lNextMonth}</div>
                 {(P.next?.month||[]).map((s,i)=>(
-                  <div key={i} style={{display:"flex",gap:10,marginBottom:8,alignItems:"flex-start"}}>
-                    <span style={{color:G.green,fontWeight:900,flexShrink:0,marginTop:2}}>→</span>
-                    <span style={{fontSize:13,lineHeight:1.7,color:G.text}}>{s}</span>
+                  <div key={i} style={{display:"flex",gap:12,padding:"12px 14px",borderRadius:10,background:i%2===0?"rgba(106,175,61,.04)":"rgba(26,58,42,.02)",border:"1px solid rgba(26,58,42,.06)",marginBottom:8,alignItems:"flex-start"}}>
+                    <div style={{width:24,height:24,borderRadius:8,background:G.green,color:"#fff",fontSize:11,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1}}>{i+1}</div>
+                    <span style={{fontSize:13,lineHeight:1.8,color:G.text}}>{s}</span>
                   </div>
                 ))}
                 {P.next?.key && (
-                  <div style={{marginTop:14,padding:"12px 15px",borderRadius:10,background:"rgba(106,175,61,.08)",border:"1px solid rgba(106,175,61,.2)"}}>
-                    <div style={{fontSize:9,fontWeight:800,color:G.green,letterSpacing:2,marginBottom:6}}>✦ {zh?"最关键":"KEY PRIORITY"}</div>
-                    <p style={{fontSize:13,fontWeight:700,color:G.greenDk,lineHeight:1.75}}>{P.next.key}</p>
+                  <div style={{marginTop:6,padding:"14px 16px",borderRadius:12,background:"rgba(106,175,61,.08)",border:"1.5px solid rgba(106,175,61,.25)"}}>
+                    <div style={{fontSize:9,fontWeight:800,color:G.green,letterSpacing:2.5,marginBottom:8}}>✦ {zh?"申请前最关键":"KEY PRIORITY"}</div>
+                    <p style={{fontSize:13.5,fontWeight:700,color:G.greenDk,lineHeight:1.8}}>{P.next.key}</p>
                   </div>
                 )}
               </div>
