@@ -451,90 +451,77 @@ export default function StarPathC() {
     if (cq?.type === "open" && taRef.current) setTimeout(() => taRef.current?.focus(), 60);
   }, [qi]);
 
-  // Decode base64 string to UTF-8 (reverse of toB64)
+  // base64 解码（对应 toB64）
   const fromB64 = (str) => {
     try {
-      const bin = atob(str.replace(/-/g,'+').replace(/_/g,'/'));
-      const bytes = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const b = atob(str.replace(/-/g, '+').replace(/_/g, '/'));
+      const bytes = new Uint8Array(b.length);
+      for (let i = 0; i < b.length; i++) bytes[i] = b.charCodeAt(i);
       return new TextDecoder().decode(bytes);
     } catch(e) { return null; }
   };
 
-  // Load shared report from URL hash on mount
+  // 加载分享报告（从 URL hash）
   useEffect(() => {
-    (async () => {
+    const hash = window.location.hash;
+    if (!hash) return;
+
+    // 短链接格式 #id=xxxxxxxx → 从 GAS 读取完整报告
+    if (hash.startsWith('#id=')) {
+      const id = hash.slice(4);
+      fetch("https://script.google.com/macros/s/AKfycbx3F1M49ZZ9263YwuLbZ_Qiu_2bQ-DN7Dpmz3HBIhCdLpKSkkRmqtJGr9SsvVi5aY2n/exec?id=" + id)
+        .then(r => r.json())
+        .then(json => {
+          if (json.ok && json.payload && json.payload.p) {
+            setProfile(json.payload.p);
+            if (json.payload.n) setName(json.payload.n);
+            if (json.payload.l) setLang(json.payload.l);
+            setPhase('result'); setTab('summary');
+          }
+        })
+        .catch(e => console.warn('Load report failed:', e));
+      return;
+    }
+
+    // 降级格式 #r=... (v3 slim UTF-8 base64)
+    if (hash.startsWith('#r=')) {
       try {
-        const hash = window.location.hash;
-        if (!hash) return;
-
-        // Short ID format: #id=xxxxxxxx → fetch full report from GAS
-        if (hash.startsWith('#id=')) {
-          const id = hash.slice(4);
-          try {
-            const res = await fetch("https://script.google.com/macros/s/AKfycbx3F1M49ZZ9263YwuLbZ_Qiu_2bQ-DN7Dpmz3HBIhCdLpKSkkRmqtJGr9SsvVi5aY2n/exec" + '?id=' + id);
-            const json = await res.json();
-            if (json.ok && json.payload) {
-              const d = json.payload;
-              if (d.p) {
-                setProfile(d.p);
-                if (d.n) setName(d.n);
-                if (d.l) setLang(d.l);
-                setPhase('result'); setTab('summary');
-              }
-            }
-          } catch(e) { console.warn('Load report failed:', e); }
-          return;
-        }
-
-      // New format: #r=... (v2/v3 minimal, direct UTF-8 base64)
-      if (hash.startsWith('#r=')) {
         const json = fromB64(hash.slice(3));
         if (!json) return;
         const d = JSON.parse(json);
-        if (d.v === 3 || d.v === 2) {
-          const isV3 = d.v === 3;
+        if (d.v === 3) {
           setProfile({
-            snap: {
-              archetype: d.a, personality: d.p,
-              tagline: isV3 ? "" : (d.t||""),
-              strengths: isV3 ? [] : (d.st||[]).map(s=>({name:s.n,desc:s.d})),
-              motivation: isV3 ? "" : (d.mo||""),
-            },
-            radar: isV3
-              ? { academicCuriosity:d.r[0], analyticalStrength:d.r[1], creativity:d.r[2], socialImpactDrive:d.r[3], leadership:d.r[4] }
-              : d.r,
-            summary: { headline: d.h||"", keyInsight: isV3?"":d.k, watchOut: isV3?"":d.w },
-            academic: { directions: isV3 ? [] : (d.ac||[]) },
-            majors: (d.mj||[]).map(m => Array.isArray(m)
-              ? {name:m[0], fit:m[1], why:'', courses:[], careers:[]}
-              : {name:m.n, fit:m.f, why:'', courses:[], careers:[]}),
-            next: { month: [], key: typeof d.nx==='string' ? d.nx : "" },
+            snap: { archetype: d.a, personality: d.p, tagline: '', strengths: [], motivation: '' },
+            radar: { academicCuriosity:d.r[0], analyticalStrength:d.r[1], creativity:d.r[2], socialImpactDrive:d.r[3], leadership:d.r[4] },
+            summary: { headline: d.h, keyInsight: '', watchOut: '' },
+            academic: { directions: [] },
+            majors: (d.mj||[]).map(m => ({ name:m[0], fit:m[1], why:'', courses:[], careers:[] })),
+            next: { month: [], key: '' },
           });
           if (d.nm) setName(d.nm);
           if (d.ln) setLang(d.ln);
           setPhase('result'); setTab('summary');
         }
-        return;
-      }
+      } catch(e) { console.warn('Slim hash decode failed:', e); }
+      return;
+    }
 
-      // Legacy format: #report=... (old double-encoded base64)
-      if (hash.startsWith('#report=')) {
-        const raw = hash.slice(8).replace(/-/g,'+').replace(/_/g,'/');
-        const padded = raw + '='.repeat((4 - raw.length % 4) % 4);
-        try {
-          const payload = JSON.parse(decodeURIComponent(escape(atob(padded))));
-          if (payload.p) {
-            setProfile(payload.p);
-            if (payload.n) setName(payload.n);
-            if (payload.l) setLang(payload.l);
-            setPhase('result'); setTab('summary');
-          }
-        } catch(e) { console.warn('Legacy hash decode failed:', e); }
-      }
-    } catch(e) { /* invalid hash */ }
-    })();
+    // 旧格式 #report=... 向下兼容
+    if (hash.startsWith('#report=')) {
+      try {
+        const raw = hash.slice(8).replace(/-/g, '+').replace(/_/g, '/');
+        const padded = raw + '=' .repeat((4 - raw.length % 4) % 4);
+        const payload = JSON.parse(decodeURIComponent(escape(atob(padded))));
+        if (payload.p) {
+          setProfile(payload.p);
+          if (payload.n) setName(payload.n);
+          if (payload.l) setLang(payload.l);
+          setPhase('result'); setTab('summary');
+        }
+      } catch(e) { console.warn('Legacy hash decode failed:', e); }
+    }
   }, []);
+
 
   // confetti on result
   useEffect(() => {
@@ -657,7 +644,7 @@ export default function StarPathC() {
       `—— StarPath AI · by StarWise`,
     ].join("\n");
 
-    // Send lead via no-cors fetch — bypasses CORS, fire-and-forget (no response needed)
+    // Lead 写入 Sheets：no-cors fetch，不受 CORS 限制
     const params = new URLSearchParams({
       name:          studentName,
       email:         studentEmail,
@@ -670,10 +657,7 @@ export default function StarPathC() {
       counselorNote: (P.summary?.counselorNote || "").slice(0, 300),
       parentPhone:   parentPhone || "",
     });
-    const gasLeadUrl = "https://script.google.com/macros/s/AKfycbx3F1M49ZZ9263YwuLbZ_Qiu_2bQ-DN7Dpmz3HBIhCdLpKSkkRmqtJGr9SsvVi5aY2n/exec?" + params.toString();
-    fetch(gasLeadUrl, { method:'GET', mode:'no-cors' }).catch(() => {
-      const img = new Image(); img.src = gasLeadUrl; // img fallback
-    });
+    fetch("https://script.google.com/macros/s/AKfycbx3F1M49ZZ9263YwuLbZ_Qiu_2bQ-DN7Dpmz3HBIhCdLpKSkkRmqtJGr9SsvVi5aY2n/exec?" + params.toString(), { method: "GET", mode: "no-cors" }).catch(() => {});
   };
 
   // Build plain-text report summary for clipboard / email
@@ -752,57 +736,40 @@ export default function StarPathC() {
     });
   };
 
-  // Encode string to base64 without double-encoding (fixes 3x size bug with Chinese)
-  const toB64 = (str) => {
-    const bytes = new TextEncoder().encode(str);
-    let bin = '';
-    bytes.forEach(b => bin += String.fromCharCode(b));
-    return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
-  };
-
   const shareReport = async () => {
     if (!profile || shareLoading) return;
     setShareLoading(true);
     const zh2 = lang === "zh";
     const archetype = profile.snap?.archetype || profile.snap?.personality || "";
     const top1 = profile.majors?.[0]?.name || "";
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbx3F1M49ZZ9263YwuLbZ_Qiu_2bQ-DN7Dpmz3HBIhCdLpKSkkRmqtJGr9SsvVi5aY2n/exec";
+    const baseUrl = window.location.href.split('#')[0].split('?')[0];
 
-    // Save full report to GAS → get 8-char ID → short URL ~50 chars
-    const payload = JSON.stringify({ p: profile, n: name, l: lang });
+    // 保存完整报告到 GAS → 返回 8 字符 ID → 链接约 50 字符
     let reportUrl;
     try {
-      const res = await fetch(GAS_URL + '?action=save&data=' + encodeURIComponent(payload));
+      const payload = JSON.stringify({ p: profile, n: name, l: lang });
+      const res = await fetch("https://script.google.com/macros/s/AKfycbx3F1M49ZZ9263YwuLbZ_Qiu_2bQ-DN7Dpmz3HBIhCdLpKSkkRmqtJGr9SsvVi5aY2n/exec?action=save&data=" + encodeURIComponent(payload));
       const json = await res.json();
       if (json.ok && json.id) {
-        const baseUrl = window.location.href.split('#')[0].split('?')[0];
         reportUrl = baseUrl + '#id=' + json.id;
       } else {
-        throw new Error('no id');
+        throw new Error('保存失败');
       }
     } catch(e) {
-      // Fallback: encode in URL
-      const rad = profile.radar || {};
-      const minimal = {
-        v:3, a:profile.snap?.archetype||"", p:profile.snap?.personality||"",
-        h:(profile.summary?.headline||"").slice(0,60),
-        r:[rad.academicCuriosity||0,rad.analyticalStrength||0,rad.creativity||0,rad.socialImpactDrive||0,rad.leadership||0],
-        mj:(profile.majors||[]).slice(0,4).map(m=>[m.name,m.fit]),
-        nm:name||"", ln:lang||"zh",
-      };
-      const baseUrl = window.location.href.split('#')[0].split('?')[0];
-      reportUrl = baseUrl + '#r=' + toB64(JSON.stringify(minimal));
+      setShareLoading(false);
+      alert(zh2 ? '生成链接失败，请下载报告后分享。' : 'Failed to generate link, please download the report to share.');
+      return;
     }
 
     const msg = zh2
-      ? `我的星途成长报告 🌟\n成长原型：「${archetype}」｜最匹配方向：${top1}\n\n👇 点击查看完整报告\n${reportUrl}`
-      : `My StarPath Report 🌟\nArchetype: ${archetype} | Top match: ${top1}\n\n👇 View full report\n${reportUrl}`;
+      ? '我的星途成长报告 🌟\n成长原型：「' + archetype + '」｜最匹配方向：' + top1 + '\n\n👇 点击查看完整报告\n' + reportUrl
+      : 'My StarPath Report 🌟\nArchetype: ' + archetype + ' | Top match: ' + top1 + '\n\n👇 View full report\n' + reportUrl;
 
-    // Cross-browser clipboard: execCommand (sync, all browsers) → clipboard API → prompt
+    // 跨浏览器剪贴板（Safari/Chrome/Firefox 全兼容）
     const ta = document.createElement('textarea');
     ta.value = msg;
     ta.setAttribute('readonly', '');
-    ta.style.cssText = 'position:fixed;top:0;left:0;width:2em;height:2em;padding:0;border:none;outline:none;box-shadow:none;background:transparent;';
+    ta.style.cssText = 'position:fixed;top:0;left:0;width:2em;height:2em;padding:0;border:none;outline:none;background:transparent;';
     document.body.appendChild(ta);
     if (/ipad|iphone/i.test(navigator.userAgent)) {
       const range = document.createRange();
@@ -813,29 +780,24 @@ export default function StarPathC() {
     } else {
       ta.select();
     }
-    let ok = false;
-    try { ok = document.execCommand('copy'); } catch(e) {}
+    let copied = false;
+    try { copied = document.execCommand('copy'); } catch(err) {}
     document.body.removeChild(ta);
-
-    if (ok) {
-      setShareCopied(true); setTimeout(()=>setShareCopied(false), 3000); setShareLoading(false);
+    if (copied) {
+      setShareCopied(true); setTimeout(() => setShareCopied(false), 3000);
     } else if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(msg)
-        .then(()=>{ setShareCopied(true); setTimeout(()=>setShareCopied(false),3000); })
-        .catch(()=>{ window.prompt(zh2?'请手动复制报告链接：':'Copy your report link:', reportUrl); })
-        .finally(()=>setShareLoading(false));
+        .then(() => { setShareCopied(true); setTimeout(() => setShareCopied(false), 3000); })
+        .catch(() => window.prompt(zh2 ? '请手动复制：' : 'Copy manually:', reportUrl));
     } else {
-      window.prompt(zh2?'请手动复制报告链接：':'Copy your report link:', reportUrl);
-      setShareLoading(false);
+      window.prompt(zh2 ? '请手动复制：' : 'Copy manually:', reportUrl);
     }
+    setShareLoading(false);
   };
 
   const downloadPDF = () => {
     if (!profile) return;
     setDownloading(true);
-    // window.open MUST be called synchronously inside the click handler (user gesture)
-    // Calling it after any delay causes popup blockers to block it
-    const pdfWin = window.open('', '_blank');
     const P = profile;
     const zh = lang === "zh";
     const studentName = name || (zh ? "学生" : "Student");
@@ -1085,56 +1047,50 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
 <div id="pbar" style="position:fixed;bottom:0;left:0;right:0;background:#1A3A2A;padding:9px 20px;display:flex;align-items:center;justify-content:space-between;z-index:999;">
   <span style="color:rgba(255,255,255,.5);font-size:10px;font-family:sans-serif;">${docTitle}</span>
   <div style="display:flex;gap:7px;">
-    <button onclick="window.print()" style="background:#6AAF3D;color:#fff;border:none;border-radius:6px;padding:7px 18px;font-size:11px;font-weight:700;cursor:pointer;font-family:sans-serif;">${zh?'下载 / 打印 PDF':'Download / Print PDF'}</button>
-    <button id="shareBtn" onclick="
-      var btn=this;
-      var shareUrl=window._shareUrl||'';
-      if(!shareUrl){btn.textContent='${zh ? "生成中…" : "Generating…"}';return;}
-      var prefix='${zh ? "我的星途成长报告 🌟\\n点击查看完整报告：" : "My StarPath Report 🌟\\nView here: "}';
-      var ta=document.createElement('textarea');
-      ta.value=prefix+shareUrl;
-      ta.style.cssText='position:fixed;top:-999px;opacity:0;';
+    <button onclick="window.print()" style="background:#6AAF3D;color:#fff;border:none;border-radius:6px;padding:7px 18px;font-size:11px;font-weight:700;cursor:pointer;font-family:sans-serif;">${zh ? '下载 / 打印 PDF' : 'Download / Print PDF'}</button>
+    <button id="pdfShareBtn" onclick="
+      var btn = this;
+      var url = window._reportUrl || (window.opener && window.opener.location && window.opener.location.href) || '';
+      if (!url) { btn.textContent = '${zh ? "生成中…" : "Generating…"}'; return; }
+      var prefix = '${zh ? "我的星途成长报告 🌟\n点击查看完整报告：" : "My StarPath Report 🌟\nView here: "}';
+      var ta = document.createElement('textarea');
+      ta.value = prefix + url;
+      ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
       document.body.appendChild(ta);
-      ta.select();
-      try{document.execCommand('copy');}catch(e){}
+      ta.select(); ta.setSelectionRange(0, 99999);
+      try { document.execCommand('copy'); } catch(e) {}
       document.body.removeChild(ta);
-      btn.style.background='#4A8C5C';
-      btn.textContent='${zh ? "✓ 链接已复制" : "✓ Link Copied"}';
-      setTimeout(function(){btn.style.background='rgba(255,255,255,.1)';btn.textContent='${zh ? "🔗 分享报告" : "🔗 Share"}';},2500);
-    " style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:sans-serif;">${zh ? '🔗 分享报告' : '🔗 Share'}</button>
+      btn.style.background = '#4A8C5C';
+      btn.textContent = '${zh ? "✓ 已复制" : "✓ Copied"}';
+      setTimeout(function(){ btn.style.background = 'rgba(255,255,255,.1)'; btn.textContent = '${zh ? "🔗 分享" : "🔗 Share"}'; }, 2500);
+    " style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.25);border-radius:6px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:sans-serif;">${zh ? '🔗 分享' : '🔗 Share'}</button>
     <button onclick="document.getElementById('pbar').style.display='none'" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);border:none;border-radius:6px;padding:7px 11px;font-size:11px;cursor:pointer;font-family:sans-serif;">✕</button>
   </div>
 </div>
 <style>@media print{#pbar{display:none!important;}}body{padding-bottom:48px;}</style>
-
+<script>document.title="${docTitle}";</script>
 </body></html>`;
 
-    // Write HTML into the window opened above — avoids CSP/blob restrictions
-    if (pdfWin) {
+    // Safari 兼容下载方案：
+    // 1. 先尝试 window.open + document.write（桌面 Chrome/Firefox 最稳定）
+    // 2. 被弹窗拦截时降级为 data URL download（Safari 支持）
+    const pdfWin = window.open('', '_blank');
+    if (pdfWin && !pdfWin.closed) {
       pdfWin.document.open();
       pdfWin.document.write(html);
       pdfWin.document.close();
-      try { pdfWin.document.title = docTitle; } catch(e) {}
-      // Inject share URL asynchronously (after GAS save)
-      const GAS_URL = "https://script.google.com/macros/s/AKfycbx3F1M49ZZ9263YwuLbZ_Qiu_2bQ-DN7Dpmz3HBIhCdLpKSkkRmqtJGr9SsvVi5aY2n/exec";
-      const pdfPayload = JSON.stringify({ p: P, n: name, l: lang });
-      fetch(GAS_URL + '?action=save&data=' + encodeURIComponent(pdfPayload))
-        .then(r => r.json())
-        .then(j => {
-          if (j.ok && j.id) {
-            const shareUrl = window.location.href.split('#')[0].split('?')[0] + '#id=' + j.id;
-            try { pdfWin._shareUrl = shareUrl; } catch(e) {}
-          }
-        }).catch(() => {});
     } else {
-      // Popup blocked: download as .html file instead
-      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-      const blobUrl = URL.createObjectURL(blob);
+      // Safari / 弹窗被拦截：用 data URL + a.download
+      // btoa 需要先把 UTF-8 转成 latin1 safe
+      const encoded = encodeURIComponent(html);
+      const dataUrl = 'data:text/html;charset=utf-8,' + encoded;
       const a = document.createElement('a');
-      a.href = blobUrl; a.download = docTitle + '.html';
+      a.href = dataUrl;
+      a.download = docTitle + '.html';
       a.style.display = 'none';
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
     setDownloading(false);
   };
@@ -1179,7 +1135,7 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
         },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
-          max_tokens: 5000,
+          max_tokens: 4000,
           temperature: 0.3,
           system: buildPrompt(newLang),
           messages: [{role:"user", content:"Student assessment responses:\n" + lines.join("\n")}],
