@@ -33,8 +33,8 @@ const T = {
     errTitle: "生成遇到了问题", errDesc: "你的答案都还在，直接重试就好",
     retry: "重新生成", backQ: "返回检查答案", lang: "EN",
     // email gate
-    gateTitle: "你的画像已生成！",
-    gateDesc:  "填写以下信息，保存你的完整报告。",
+    gateTitle: "最后一步，获取你的完整报告",
+    gateDesc:  "填写姓名和邮箱，即可查看你的专属成长画像，并保存报告链接。",
     namePH: "你的名字（可选）", emailPH: "your@email.com",
     gateBtn: "查看完整报告 →", gateSkip: "先跳过",
     gateNote: "不会收到垃圾邮件。数据安全加密保存。",
@@ -126,16 +126,179 @@ const T = {
 };
 
 // ─── QUESTIONS ────────────────────────────────────────────────────────────────
-const buildQ = (lang) => {
+// 根据年级选题库: G5及以下 / G6-8 / G9-12
+const getAgeGroup = (gradeVal) => {
+  if (!gradeVal || gradeVal === "5under") return "elem";   // G5及以下
+  const g = parseInt(gradeVal);
+  if (g <= 5) return "elem";
+  if (g <= 8) return "mid";    // G6-8
+  return "high";               // G9-12
+};
+
+const buildQ = (lang, ageGroup = "high") => {
   const zh = lang === "zh";
+  const isElem = ageGroup === "elem";
+  const isMid  = ageGroup === "mid";
+  const isHigh = ageGroup === "high";
+
+  // ── 通用：年级和学校（第1题固定）
+  const q_grade = { id:"pr1", sec:"profile", secLabel:zh?"基本信息":"About You", secEmoji:"📋", secColor:G.blue,
+    type:"choice", text:zh?"你目前在几年级？":"What grade are you in?",
+    opts:[{l:zh?"5年级及以下":"Grade 5 & Under",v:"5under",e:"🌱"},
+          {l:zh?"6年级":"Grade 6",v:"6",e:"🌿"},
+          {l:zh?"7年级":"Grade 7",v:"7",e:"🔥"},
+          {l:zh?"8年级":"Grade 8",v:"8",e:"⚡"},
+          {l:zh?"9年级":"Grade 9",v:"9",e:"🚀"},
+          {l:zh?"10年级":"Grade 10",v:"10",e:"⭐"},
+          {l:zh?"11年级":"Grade 11",v:"11",e:"💫"},
+          {l:zh?"12年级":"Grade 12",v:"12",e:"🎓"}]};
+
+  // ══════════════════════════════════════════════════════
+  // 小学组 G5及以下
+  // ══════════════════════════════════════════════════════
+  if (isElem) return [
+    q_grade,
+    { id:"pr2", sec:"profile", secLabel:zh?"基本信息":"About You", secEmoji:"📋", secColor:G.blue,
+      type:"multi", max:3, text:zh?"你最喜欢的课是哪些？（最多3个）":"Which classes do you like most? (up to 3)",
+      opts:[{l:zh?"数学":"Math",v:"math",e:"🔢"},{l:zh?"科学":"Science",v:"sci",e:"🔬"},
+            {l:zh?"语文/英语":"Language Arts",v:"eng",e:"📖"},{l:zh?"美术":"Art",v:"art",e:"🎨"},
+            {l:zh?"音乐":"Music",v:"mus",e:"🎵"},{l:zh?"体育":"PE",v:"pe",e:"⚽"},
+            {l:zh?"历史/社会":"Social Studies",v:"ss",e:"🌍"},{l:zh?"电脑课":"Computer",v:"cs",e:"💻"}]},
+    { id:"ac1", sec:"academic", secLabel:zh?"兴趣探索":"Interests", secEmoji:"🔬", secColor:G.green,
+      type:"choice", text:zh?"课外时间你最喜欢做什么？":"What do you love doing after school?",
+      opts:[{l:zh?"搭积木/做手工":"Building & making things",v:"make",e:"🔧"},
+            {l:zh?"画画/写故事":"Drawing or writing stories",v:"create",e:"✏️"},
+            {l:zh?"玩游戏/探索地图":"Games & exploring",v:"explore",e:"🗺"},
+            {l:zh?"研究动物/自然":"Animals & nature",v:"nature",e:"🌿"},
+            {l:zh?"看科普/发问题":"Learning cool facts",v:"learn",e:"🤔"},
+            {l:zh?"帮助同学/照顾小动物":"Helping others",v:"help",e:"💛"}]},
+    { id:"ac2", sec:"academic", secLabel:zh?"兴趣探索":"Interests", secEmoji:"🔬", secColor:G.green,
+      type:"multi", max:3, text:zh?"你好奇的话题？（可多选）":"Topics that make you curious? (pick any)",
+      opts:[{l:zh?"太空和宇宙":"Space & universe",v:"space",e:"🚀"},{l:zh?"动物和植物":"Animals & plants",v:"nature",e:"🐾"},
+            {l:zh?"机器人和科技":"Robots & tech",v:"tech",e:"🤖"},{l:zh?"历史和古代":"History & ancient times",v:"hist",e:"🏺"},
+            {l:zh?"数学和谜题":"Math puzzles",v:"math",e:"🧩"},{l:zh?"艺术和音乐":"Art & music",v:"art",e:"🎨"},
+            {l:zh?"故事和写作":"Stories & writing",v:"story",e:"📚"},{l:zh?"运动和健康":"Sports & health",v:"sport",e:"🏃"}]},
+    { id:"st1", sec:"strengths", secLabel:zh?"我的特长":"My Strengths", secEmoji:"⚡", secColor:G.amber,
+      type:"choice", text:zh?"在小组里，你通常是哪种人？":"In a group, which one are you?",
+      opts:[{l:zh?"出主意的人":"The idea person",v:"idea",e:"💡"},
+            {l:zh?"把事情做完的人":"The one who gets it done",v:"do",e:"⚙️"},
+            {l:zh?"帮大家合作的人":"The one who helps everyone work together",v:"team",e:"🤝"},
+            {l:zh?"研究细节的人":"The one who checks every detail",v:"detail",e:"🔍"}]},
+    { id:"st2", sec:"strengths", secLabel:zh?"我的特长":"My Strengths", secEmoji:"⚡", secColor:G.amber,
+      type:"open", minChars:1,
+      text:zh?"你最近做了什么让你感觉很自豪的事？（学校的或课外的都可以）":"What's something you did recently that made you really proud?",
+      ph:zh?"比如：我做了一个…我帮助了…":"Like: I built a... I helped..."},
+    { id:"va1", sec:"values", secLabel:zh?"我的想法":"My Ideas", secEmoji:"🧭", secColor:G.purple,
+      type:"multi", max:2, text:zh?"你最喜欢哪种学习方式？（选2个）":"How do you like to learn best? (pick 2)",
+      opts:[{l:zh?"自己动手试试看":"Trying things myself",v:"hands",e:"🙌"},
+            {l:zh?"看书或视频了解":"Reading or watching videos",v:"read",e:"📺"},
+            {l:zh?"和朋友一起讨论":"Talking with friends",v:"talk",e:"💬"},
+            {l:zh?"老师一步步教我":"Teacher showing me step by step",v:"guide",e:"👩‍🏫"}]},
+    { id:"va2", sec:"values", secLabel:zh?"我的想法":"My Ideas", secEmoji:"🧭", secColor:G.purple,
+      type:"open", minChars:1,
+      text:zh?"长大后你想做什么工作？为什么？（说说你现在的想法就好）":"What job do you think you'd like when you grow up? Why?",
+      ph:zh?"不管现实不现实，说说你的想法…":"Anything is OK — just what you imagine now…"},
+    { id:"act1", sec:"activities", secLabel:zh?"课外活动":"Activities", secEmoji:"🏆", secColor:G.rose,
+      type:"multi", max:3, text:zh?"你现在参加哪些课外活动？（可多选）":"What activities do you do outside school? (pick any)",
+      opts:[{l:zh?"体育运动":"Sports",v:"sport",e:"⚽"},{l:zh?"画画/手工":"Art & crafts",v:"art",e:"🎨"},
+            {l:zh?"音乐/舞蹈":"Music or dance",v:"music",e:"🎵"},{l:zh?"编程/机器人":"Coding or robotics",v:"tech",e:"🤖"},
+            {l:zh?"读书/写作":"Reading or writing",v:"read",e:"📚"},{l:zh?"帮助社区":"Helping community",v:"help",e:"🌍"},
+            {l:zh?"暂时没有":"Nothing yet",v:"none",e:"🌱"}]},
+    { id:"act2", sec:"activities", secLabel:zh?"课外活动":"Activities", secEmoji:"🏆", secColor:G.rose,
+      type:"open", minChars:1,
+      text:zh?"有没有一件你真的很想学或很想做的事？是什么？":"Is there something you really want to learn or do someday? What is it?",
+      ph:zh?"比如：我想学…我想做…":"Like: I want to learn... I want to make..."},
+  ];
+
+  // ══════════════════════════════════════════════════════
+  // 初中组 G6-8
+  // ══════════════════════════════════════════════════════
+  if (isMid) return [
+    q_grade,
+    { id:"pr2", sec:"profile", secLabel:zh?"基本信息":"About You", secEmoji:"📋", secColor:G.blue,
+      type:"multi", max:3, text:zh?"你比较有把握的科目？（最多3个）":"Subjects where you feel most confident? (up to 3)",
+      opts:[{l:zh?"数学":"Math",v:"math",e:"🔢"},{l:zh?"理科（物/化/生）":"Sciences",v:"sci",e:"🔬"},
+            {l:zh?"计算机/编程":"CS / Coding",v:"cs",e:"💻"},{l:zh?"语文/英语写作":"Writing",v:"eng",e:"✍️"},
+            {l:zh?"历史/社会":"History / Social Studies",v:"hist",e:"📜"},{l:zh?"艺术/音乐":"Arts / Music",v:"arts",e:"🎨"}]},
+    { id:"pr3", sec:"profile", secLabel:zh?"基本信息":"About You", secEmoji:"📋", secColor:G.blue,
+      type:"multi", max:2, text:zh?"你现在参加的课外活动？（最多2个）":"Current extracurriculars? (up to 2)",
+      opts:[{l:zh?"体育运动":"Sports",v:"sport",e:"⚽"},{l:zh?"艺术/音乐":"Arts / Music",v:"arts",e:"🎨"},
+            {l:zh?"编程/机器人":"Coding / Robotics",v:"tech",e:"🤖"},{l:zh?"学术竞赛":"Academic competitions",v:"comp",e:"🏆"},
+            {l:zh?"社区服务":"Community service",v:"serv",e:"🌍"},{l:zh?"写作/阅读":"Writing / Reading",v:"read",e:"📚"},
+            {l:zh?"暂时没有":"Nothing yet",v:"none",e:"🌱"}]},
+    { id:"ac1", sec:"academic", secLabel:zh?"学习兴趣":"Interests", secEmoji:"🔬", secColor:G.green,
+      type:"choice", text:zh?"最吸引你的问题类型是？":"What kind of questions excite you most?",
+      opts:[{l:zh?"为什么——探索规律和原理":"Why — how things work",v:"why",e:"🔍"},
+            {l:zh?"怎么做——动手解决问题":"How — building solutions",v:"how",e:"🛠"},
+            {l:zh?"人与社会——理解人的行为":"People & society",v:"people",e:"🧠"},
+            {l:zh?"用创意表达想法":"Creative expression",v:"create",e:"🎨"}]},
+    { id:"ac2", sec:"academic", secLabel:zh?"学习兴趣":"Interests", secEmoji:"🔬", secColor:G.green,
+      type:"multi", max:3, text:zh?"课外你会主动去了解的话题？（最多3个）":"Topics you look up on your own? (up to 3)",
+      opts:[{l:zh?"科技/AI":"Tech / AI",v:"tech",e:"🤖"},{l:zh?"自然/环境":"Nature / Environment",v:"env",e:"🌍"},
+            {l:zh?"数学/逻辑":"Math / Logic",v:"math",e:"🧩"},{l:zh?"历史/文化":"History / Culture",v:"hist",e:"🏺"},
+            {l:zh?"健康/医学":"Health / Medicine",v:"bio",e:"🏥"},{l:zh?"艺术/设计":"Art / Design",v:"art",e:"🎨"},
+            {l:zh?"故事/写作":"Stories / Writing",v:"story",e:"📝"},{l:zh?"运动/体能":"Sports / Fitness",v:"sport",e:"🏃"}]},
+    { id:"ac3", sec:"academic", secLabel:zh?"学习兴趣":"Interests", secEmoji:"🔬", secColor:G.green,
+      type:"open", minChars:1,
+      text:zh?"有没有一个话题，你会自己主动去查、去研究？是什么，为什么让你感兴趣？":"Is there a topic you've looked up on your own? What and why?",
+      ph:zh?"可以是任何领域…":"Anything — school or outside school…"},
+    { id:"st1", sec:"strengths", secLabel:zh?"我的优势":"Strengths", secEmoji:"⚡", secColor:G.amber,
+      type:"multi", max:3, text:zh?"同学最常来找你帮什么忙？（最多3个）":"What do classmates ask you for help with most? (up to 3)",
+      opts:[{l:zh?"讲题/解释知识":"Explaining things",v:"teach",e:"📖"},
+            {l:zh?"出主意/想创意":"Ideas & creativity",v:"idea",e:"💡"},
+            {l:zh?"写作/改文章":"Writing & editing",v:"write",e:"✍️"},
+            {l:zh?"组织活动":"Organizing",v:"org",e:"📋"},
+            {l:zh?"听我说话/支持":"Listening & support",v:"emp",e:"💛"},
+            {l:zh?"技术/电脑":"Tech help",v:"tech",e:"💻"}]},
+    { id:"st2", sec:"strengths", secLabel:zh?"我的优势":"Strengths", secEmoji:"⚡", secColor:G.amber,
+      type:"choice", text:zh?"小组项目里，你自然承担什么角色？":"In group projects, what role do you naturally take?",
+      opts:[{l:zh?"提出想法和方向":"The idea person",v:"vis",e:"🌟"},
+            {l:zh?"做计划和推进":"The organizer",v:"exe",e:"⚙️"},
+            {l:zh?"调解矛盾、帮大家合作":"The peacemaker",v:"med",e:"🤝"},
+            {l:zh?"深入研究资料":"The researcher",v:"res",e:"🔬"},
+            {l:zh?"把成品打磨好":"The finisher",v:"fin",e:"✨"}]},
+    { id:"st3", sec:"strengths", secLabel:zh?"我的优势":"Strengths", secEmoji:"⚡", secColor:G.amber,
+      type:"open", minChars:1,
+      text:zh?"说一件让你感觉「我真的做到了」的事。发生了什么？":"Describe something where you felt "I actually did it!" What happened?",
+      ph:zh?"学校的或课外的都可以…":"School or outside — anything real…"},
+    { id:"va1", sec:"values", secLabel:zh?"价值观":"Values", secEmoji:"🧭", secColor:G.purple,
+      type:"multi", max:2, text:zh?"学习和做事最让你有动力的是？（选2个）":"What motivates you most? (pick 2)",
+      opts:[{l:zh?"真正搞懂一件事":"Understanding something deeply",v:"mas",e:"🔍"},
+            {l:zh?"帮助到别人":"Making a difference for others",v:"imp",e:"🌍"},
+            {l:zh?"被认可和表扬":"Getting recognized",v:"rec",e:"⭐"},
+            {l:zh?"挑战自己的极限":"Pushing my own limits",v:"chal",e:"🔥"},
+            {l:zh?"和好朋友一起做事":"Working with people I like",v:"col",e:"🤝"},
+            {l:zh?"自己决定怎么做":"Having freedom to do it my way",v:"aut",e:"🦅"}]},
+    { id:"va2", sec:"values", secLabel:zh?"价值观":"Values", secEmoji:"🧭", secColor:G.purple,
+      type:"open", minChars:1,
+      text:zh?"如果可以做任何项目或工作，你最想做什么？不用考虑现不现实。":"If you could work on any project or job, what would it be? Dream big.",
+      ph:zh?"想帮助谁，做什么，改变什么…":"Who would you help, what would you make, what would change…"},
+    { id:"act1", sec:"activities", secLabel:zh?"课外活动":"Activities", secEmoji:"🏆", secColor:G.rose,
+      type:"choice", text:zh?"你在课外活动里通常是什么角色？":"In your activities, what role do you usually play?",
+      opts:[{l:zh?"领导或负责人":"Leader or organizer",v:"lead",e:"👑"},
+            {l:zh?"核心成员":"Key member",v:"core",e:"⭐"},
+            {l:zh?"认真参与的普通成员":"Regular but committed member",v:"part",e:"🙋"},
+            {l:zh?"刚开始探索":"Just starting to explore",v:"new",e:"🌱"}]},
+    { id:"act2", sec:"activities", secLabel:zh?"课外活动":"Activities", secEmoji:"🏆", secColor:G.rose,
+      type:"multi", max:3, text:zh?"你想在初中阶段多尝试哪些活动？（最多3个）":"What activities do you want to try in middle school? (up to 3)",
+      opts:[{l:zh?"学术竞赛":"Academic competitions",v:"comp",e:"🏆"},
+            {l:zh?"科学/技术项目":"Science / Tech projects",v:"tech",e:"🔬"},
+            {l:zh?"艺术/创意":"Arts & creative",v:"arts",e:"🎨"},
+            {l:zh?"体育运动":"Sports",v:"sport",e:"⚽"},
+            {l:zh?"社区服务":"Community service",v:"serv",e:"🌍"},
+            {l:zh?"写作/阅读":"Writing / Reading",v:"read",e:"📚"},
+            {l:zh?"创业/小项目":"Starting something new",v:"biz",e:"💡"}]},
+    { id:"act3", sec:"activities", secLabel:zh?"课外活动":"Activities", secEmoji:"🏆", secColor:G.rose,
+      type:"open", minChars:1,
+      text:zh?"说一件你真正投入过时间和精力的课外事。你做了什么，学到了什么？":"Describe one activity you genuinely put time and effort into. What did you do and learn?",
+      ph:zh?"大事小事都可以，说真实的…":"Big or small — just something real…"},
+  ];
+
+  // ══════════════════════════════════════════════════════
+  // 高中组 G9-12（原题库）
+  // ══════════════════════════════════════════════════════
   return [
-    // ── Section 1: Profile
-    { id:"pr1", sec:"profile", secLabel:zh?"基本定位":"Your Profile", secEmoji:"📋", secColor:G.blue,
-      type:"choice", text:zh?"你目前在几年级？":"What grade are you in?",
-      opts:[{l:zh?"5年级及以下":"Grade 5 & Under",v:"5under",e:"🌱"},{l:zh?"6年级":"Grade 6",v:"6",e:"🌿"},
-            {l:zh?"7年级":"Grade 7",v:"7",e:"🔥"},{l:zh?"8年级":"Grade 8",v:"8",e:"⚡"},
-            {l:zh?"9年级":"Grade 9",v:"9",e:"🚀"},{l:zh?"10年级":"Grade 10",v:"10",e:"⭐"},
-            {l:zh?"11年级":"Grade 11",v:"11",e:"💫"},{l:zh?"12年级":"Grade 12",v:"12",e:"🎓"}]},
+    q_grade,
     { id:"pr2", sec:"profile", secLabel:zh?"基本定位":"Your Profile", secEmoji:"📋", secColor:G.blue,
       type:"multi", max:3, text:zh?"你就读的学校类型？（可多选）":"What describes your school? (select all that apply)",
       opts:[{l:zh?"美国公立高中":"US Public School",v:"us_public",e:"🏫"},
@@ -157,7 +320,6 @@ const buildQ = (lang) => {
             {l:zh?"艺术/音乐/戏剧":"Arts / Music",v:"arts",e:"🎭"},{l:zh?"社区服务":"Community Service",v:"comm",e:"🤝"},
             {l:zh?"学生会/领导":"Student Leadership",v:"lead",e:"🎤"},{l:zh?"科研/实验室":"Research / Lab",v:"res",e:"🔭"},
             {l:zh?"创业/商业":"Entrepreneurship",v:"biz",e:"💡"},{l:zh?"暂时没有固定活动":"Nothing formal yet",v:"none",e:"🌱"}]},
-    // ── Section 2: Academic
     { id:"ac1", sec:"academic", secLabel:zh?"学科兴趣":"Academics", secEmoji:"🔬", secColor:G.green,
       type:"choice", text:zh?"你最想深入研究哪类问题？":"What kind of problems fascinate you most?",
       opts:[{l:zh?"探索规律和原理（为什么）":"Why — patterns & principles",v:"analytical",e:"🔍"},
@@ -182,7 +344,6 @@ const buildQ = (lang) => {
       type:"open", minChars:1,
       text:zh?"有没有一个问题或话题，是你课外会自己去深挖的？是什么，为什么让你着迷？":"Is there a topic you explore on your own outside school? What and why does it fascinate you?",
       ph:zh?"可以是任何领域，不一定和学校课程有关…":"Anything — doesn't need to be school-related…"},
-    // ── Section 3: Strengths
     { id:"st1", sec:"strengths", secLabel:zh?"优势与才干":"Strengths", secEmoji:"⚡", secColor:G.amber,
       type:"multi", max:4, text:zh?"同学最常来找你帮什么忙？（最多4个，选真实做过的）":"What do classmates most often ask you for? (up to 4, be honest)",
       opts:[{l:zh?"解题/讲知识点":"Explaining / tutoring",v:"teach",e:"📖"},
@@ -204,9 +365,8 @@ const buildQ = (lang) => {
       type:"scale", leftLabel:zh?"独立深度专注":"Solo deep focus", rightLabel:zh?"多线并行推进":"Juggling many things"},
     { id:"st4", sec:"strengths", secLabel:zh?"优势与才干":"Strengths", secEmoji:"⚡", secColor:G.amber,
       type:"open", minChars:1,
-      text:zh?"描述一件让你感觉「我真的很擅长这个」的事。具体说你做了什么，结果是什么。":"Describe something where you felt \"I'm genuinely good at this.\" What did you do and what happened?",
+      text:zh?"描述一件让你感觉「我真的很擅长这个」的事。具体说你做了什么，结果是什么。":"Describe something where you felt "I'm genuinely good at this." What did you do and what happened?",
       ph:zh?"可以是学校里的，也可以是课外的任何事…":"Academic or extracurricular — anything real…"},
-    // ── Section 4: Values
     { id:"va1", sec:"values", secLabel:zh?"价值观":"Values & Drive", secEmoji:"🧭", secColor:G.purple,
       type:"multi", max:3, text:zh?"你学习和做事的核心驱动力？（选3个最真实的）":"Your core motivators? (pick the 3 most honest)",
       opts:[{l:zh?"真正搞懂深层原理":"Deep understanding",v:"mas",e:"🔍"},
@@ -227,7 +387,6 @@ const buildQ = (lang) => {
       type:"open", minChars:1,
       text:zh?"如果你可以用大学4年做一件对世界有意义的事，你会做什么？":"If you could use 4 years of college to do one meaningful thing for the world, what would it be?",
       ph:zh?"不用考虑现不现实，说说你真正在意的事…":"Dream big — what genuinely matters to you?"},
-    // ── Section 5: Activities
     { id:"act1", sec:"activities", secLabel:zh?"经历与活动":"Experience", secEmoji:"🏆", secColor:G.rose,
       type:"choice", text:zh?"你在课外活动中通常处于什么位置？":"In your extracurriculars, what position do you usually hold?",
       opts:[{l:zh?"领导或负责人":"Leader / organizer",v:"lead",e:"👑"},
@@ -256,6 +415,7 @@ const buildQ = (lang) => {
   ];
 };
 
+// ─── SECTIONS META
 // ─── SECTIONS META ────────────────────────────────────────────────────────────
 const SECS = (lang) => {
   const zh = lang === "zh";
@@ -269,9 +429,16 @@ const SECS = (lang) => {
 };
 
 // ─── AI PROMPT ────────────────────────────────────────────────────────────────
-const buildPrompt = (lang) => {
+const buildPrompt = (lang, ageGroup = 'high') => {
   const zh = lang === "zh";
-  return `You are StarPath AI, a college admissions expert at StarWise International Education. Analyze student responses and return ONLY valid JSON — no markdown, no backticks.
+  return `You are StarPath AI, an expert educational advisor at StarWise International Education. Analyze student responses and return ONLY valid JSON — no markdown, no backticks.
+
+STUDENT AGE GROUP: ${ageGroup === 'elem' ? 'Elementary (Grade 5 & under)' : ageGroup === 'mid' ? 'Middle School (Grade 6-8)' : 'High School (Grade 9-12)'}
+
+REPORTING ANGLE BASED ON AGE GROUP:
+- Elementary (G5 under): Focus on curiosity, play-based strengths, early interest sparks. Use simple, encouraging language. Avoid college/career specifics. Emphasize "what lights you up" and "how you like to learn". Report sections: growth archetype, top interest areas, learning style, 2-3 fun next steps.
+- Middle School (G6-8): Focus on emerging strengths, subject interests, early identity formation. Use friendly, forward-looking language. Light mention of future directions. Report sections: growth archetype, core strengths, interest clusters, 3-4 activity/exploration recommendations for middle school.  
+- High School (G9-12): Full college-focused analysis. Academic directions, major matches, EC strategy, counselor notes, application narrative. Use professional but warm language.
 
 Return this exact structure:
 {
@@ -432,10 +599,12 @@ export default function StarPathC() {
   const [downloading, setDownloading] = useState(false);
 
   const t    = T[lang];
-  const QS   = buildQ(lang);
+  const ageGroup = ans['pr1'] ? getAgeGroup(ans['pr1']) : 'high';
+  const QS   = buildQ(lang, ageGroup);
   const SECS_ = SECS(lang);
   const TOTAL = QS.length;
-  const cq   = QS[qi];
+  const safeQi = Math.min(qi, TOTAL - 1);
+  const cq   = QS[safeQi];
   const taRef = useRef(null);
 
   // loading animation
@@ -450,6 +619,11 @@ export default function StarPathC() {
   useEffect(() => {
     if (cq?.type === "open" && taRef.current) setTimeout(() => taRef.current?.focus(), 60);
   }, [qi]);
+
+  // 年级切换时 qi 越界保护
+  useEffect(() => {
+    if (qi >= TOTAL) setQi(TOTAL - 1);
+  }, [ageGroup]);
 
   // base64 解码（对应 toB64）
   const fromB64 = (str) => {
@@ -579,7 +753,7 @@ export default function StarPathC() {
           model:"claude-sonnet-4-20250514",
           max_tokens:4000,
           temperature:0.3,
-          system:buildPrompt(lang),
+          system:buildPrompt(lang, ageGroup),
           messages:[{role:"user",content:`Student assessment responses:\n${lines.join("\n")}`}],
         }),
       });
@@ -791,39 +965,111 @@ export default function StarPathC() {
 
   // 页面内复制弹窗（手机无法自动复制时显示）
   const showCopyModal = (text, isZh) => {
+    // 从 text 里提取 URL（最后一行）
+    const lines = text.trim().split('\n');
+    const url = lines[lines.length - 1].trim();
+
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+
     const box = document.createElement('div');
-    box.style.cssText = 'background:#fff;border-radius:16px;padding:24px;width:100%;max-width:400px;font-family:Nunito,sans-serif;';
+    box.style.cssText = 'background:#fff;border-radius:20px;padding:28px 24px;width:100%;max-width:380px;font-family:Nunito,sans-serif;';
+
     const title = document.createElement('div');
-    title.style.cssText = 'font-size:15px;font-weight:800;color:#1A3A2A;margin-bottom:12px;';
-    title.textContent = isZh ? '复制报告链接' : 'Copy Report Link';
+    title.style.cssText = 'font-size:16px;font-weight:800;color:#1A3A2A;margin-bottom:4px;';
+    title.textContent = isZh ? '分享我的成长报告' : 'Share My Report';
+
+    const subtitle = document.createElement('div');
+    subtitle.style.cssText = 'font-size:12px;color:rgba(26,58,42,.45);margin-bottom:20px;';
+    subtitle.textContent = isZh ? '扫码或复制链接，无需登录即可查看' : 'Scan QR or copy link — no login needed';
+
+    // 二维码容器
+    const qrWrap = document.createElement('div');
+    qrWrap.style.cssText = 'display:flex;justify-content:center;margin-bottom:16px;';
+    const qrDiv = document.createElement('div');
+    qrDiv.id = 'qr-canvas-wrap';
+    qrDiv.style.cssText = 'background:#f8f8f4;border-radius:12px;padding:12px;display:flex;align-items:center;justify-content:center;width:160px;height:160px;';
+    qrDiv.innerHTML = '<div style="font-size:11px;color:rgba(26,58,42,.3);">生成中…</div>';
+    qrWrap.appendChild(qrDiv);
+
+    // 链接显示
+    const urlBox = document.createElement('div');
+    urlBox.style.cssText = 'background:#f5f9f3;border:1px solid rgba(45,90,61,.15);border-radius:10px;padding:10px 14px;font-size:11px;color:#2D5A3D;font-weight:700;word-break:break-all;margin-bottom:14px;text-align:center;font-family:monospace;';
+    urlBox.textContent = url;
+
+    // 文字内容（隐藏的 textarea 用于复制）
     const textarea = document.createElement('textarea');
     textarea.value = text;
     textarea.setAttribute('readonly', '');
-    textarea.style.cssText = 'width:100%;height:120px;border:1.5px solid #e0e0e0;border-radius:10px;padding:10px;font-size:12px;resize:none;box-sizing:border-box;font-family:Nunito,sans-serif;color:#333;margin-bottom:12px;';
+    textarea.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
+
+    // 按钮行
     const btnRow = document.createElement('div');
     btnRow.style.cssText = 'display:flex;gap:8px;';
+
     const copyBtn = document.createElement('button');
-    copyBtn.style.cssText = 'flex:1;background:#6AAF3D;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:Nunito,sans-serif;';
-    copyBtn.textContent = isZh ? '复制' : 'Copy';
+    copyBtn.style.cssText = 'flex:1;background:#2D5A3D;color:#fff;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:Nunito,sans-serif;transition:background .2s;';
+    copyBtn.textContent = isZh ? '📋 复制链接' : '📋 Copy Link';
     copyBtn.onclick = () => {
+      document.body.appendChild(textarea);
       textarea.select(); textarea.setSelectionRange(0, 999999);
       try { document.execCommand('copy'); } catch(e) {}
-      copyBtn.textContent = isZh ? '✓ 已复制' : '✓ Copied';
+      document.body.removeChild(textarea);
       copyBtn.style.background = '#4A8C5C';
-      setTimeout(() => document.body.removeChild(overlay), 1500);
+      copyBtn.textContent = isZh ? '✓ 已复制！' : '✓ Copied!';
+      setTimeout(() => {
+        copyBtn.style.background = '#2D5A3D';
+        copyBtn.textContent = isZh ? '📋 复制链接' : '📋 Copy Link';
+      }, 2500);
     };
+
     const closeBtn = document.createElement('button');
-    closeBtn.style.cssText = 'padding:12px 16px;background:#f5f5f5;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:Nunito,sans-serif;';
+    closeBtn.style.cssText = 'padding:13px 16px;background:#f5f5f0;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:Nunito,sans-serif;color:#555;';
     closeBtn.textContent = isZh ? '关闭' : 'Close';
     closeBtn.onclick = () => document.body.removeChild(overlay);
-    btnRow.appendChild(copyBtn); btnRow.appendChild(closeBtn);
-    box.appendChild(title); box.appendChild(textarea); box.appendChild(btnRow);
+
+    btnRow.appendChild(copyBtn);
+    btnRow.appendChild(closeBtn);
+
+    box.appendChild(title);
+    box.appendChild(subtitle);
+    box.appendChild(qrWrap);
+    box.appendChild(urlBox);
+    box.appendChild(btnRow);
     overlay.appendChild(box);
     overlay.onclick = (e) => { if (e.target === overlay) document.body.removeChild(overlay); };
     document.body.appendChild(overlay);
-    setTimeout(() => { textarea.select(); textarea.setSelectionRange(0, 999999); }, 100);
+
+    // 加载 qrcode.js 并生成二维码
+    const loadQR = () => {
+      if (window.QRCode) {
+        qrDiv.innerHTML = '';
+        new window.QRCode(qrDiv, {
+          text: url,
+          width: 136,
+          height: 136,
+          colorDark: '#1A3A2A',
+          colorLight: '#f8f8f4',
+          correctLevel: window.QRCode.CorrectLevel.M,
+        });
+      } else {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+        script.onload = () => {
+          qrDiv.innerHTML = '';
+          new window.QRCode(qrDiv, {
+            text: url,
+            width: 136,
+            height: 136,
+            colorDark: '#1A3A2A',
+            colorLight: '#f8f8f4',
+            correctLevel: window.QRCode.CorrectLevel.M,
+          });
+        };
+        document.head.appendChild(script);
+      }
+    };
+    loadQR();
   };
 
   const downloadPDF = () => {
@@ -1173,7 +1419,7 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
           model: "claude-sonnet-4-20250514",
           max_tokens: 4000,
           temperature: 0.3,
-          system: buildPrompt(newLang),
+          system: buildPrompt(newLang, getAgeGroup(ans['pr1'])),
           messages: [{role:"user", content:"Student assessment responses:\n" + lines.join("\n")}],
         }),
       });
@@ -1237,7 +1483,7 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
 
   // ── QUIZ ───────────────────────────────────────────────────────────────────
   if (phase === "quiz" && cq) {
-    const progress = (qi / TOTAL) * 100;
+    const progress = (safeQi / TOTAL) * 100;
     const handleTouchStart = (e) => { window._touchStartX = e.touches[0].clientX; };
     const handleTouchEnd = (e) => {
       const dx = e.changedTouches[0].clientX - (window._touchStartX||0);
@@ -1269,13 +1515,18 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
                 );
               })}
             </div>
-            {/* Progress bar */}
-            <div style={{height:3,background:"rgba(26,58,42,.07)",borderRadius:2,overflow:"hidden",marginBottom:12}}>
-              <div style={{height:"100%",background:`linear-gradient(90deg,${G.green},${G.greenLt})`,width:`${progress}%`,transition:"width .4s cubic-bezier(.16,1,.3,1)",borderRadius:2}}/>
+            {/* Progress bar + 数字 */}
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+              <div style={{flex:1,height:5,background:"rgba(26,58,42,.07)",borderRadius:3,overflow:"hidden"}}>
+                <div style={{height:"100%",background:`linear-gradient(90deg,${G.green},${G.greenLt})`,width:`${progress}%`,transition:"width .4s cubic-bezier(.16,1,.3,1)",borderRadius:3}}/>
+              </div>
+              <span style={{fontSize:11,fontWeight:700,color:G.green,minWidth:36,textAlign:"right"}}>{qi+1}/{TOTAL}</span>
             </div>
-            <div style={{display:"flex",justifyContent:"space-between",paddingBottom:12}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingBottom:12}}>
               <span style={{fontSize:12,color:secColor,fontWeight:700}}>{cq.secEmoji} {cq.secLabel}</span>
-              <span style={{fontSize:12,opacity:.3,fontWeight:600}}>{qi+1} / {TOTAL}</span>
+              <span style={{fontSize:10,padding:"2px 8px",borderRadius:10,background:"rgba(26,58,42,.06)",color:"rgba(26,58,42,.4)",fontWeight:600}}>
+                {ageGroup==="elementary"?(zh?"小学组":"Elementary"):ageGroup==="middle"?(zh?"初中组":"Middle"):zh?"高中组":"High School"}
+              </span>
             </div>
           </div>
         </div>
@@ -1292,7 +1543,16 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
               <div style={{display:"grid",gridTemplateColumns:cq.opts.length>=5?"1fr 1fr":"1fr",gap:9}}>
                 {cq.opts.map(o=>(
                   <div key={o.v} className={`choice ${ans[cq.id]===o.v?"on":""}`}
-                    onClick={()=>setAns(p=>({...p,[cq.id]:o.v}))}>
+                    onClick={()=>{
+                      const newAns = {...ans, [cq.id]:o.v};
+                      // 年级切换时清空后续答案，防止题库变了但答案不匹配
+                      if (cq.id === 'pr1') {
+                        const onlyGrade = {pr1: o.v};
+                        setAns(onlyGrade);
+                      } else {
+                        setAns(newAns);
+                      }
+                    }}>
                     <span style={{fontSize:20}}>{o.e}</span>
                     <span style={{fontSize:13,fontWeight:600,color:ans[cq.id]===o.v?secColor:G.text,flex:1}}>{o.l}</span>
                     {ans[cq.id]===o.v && <span style={{color:secColor,fontWeight:900,fontSize:14}}>✓</span>}
@@ -1374,13 +1634,31 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
           </div>
         </div>
 
-        {/* Fixed bottom button */}
-        <div style={{position:"fixed",bottom:0,left:0,right:0,background:"linear-gradient(to top,#F5F9F3 72%,transparent)",padding:"20px 20px 24px"}}>
+        {/* Fixed bottom nav: 返回 + 进度 + 下一题 */}
+        <div style={{position:"fixed",bottom:0,left:0,right:0,background:"linear-gradient(to top,#F5F9F3 80%,transparent)",padding:"16px 20px 24px"}}>
           <div style={{maxWidth:580,margin:"0 auto"}}>
-            <button className="gbtn" disabled={!ok()} onClick={next}
-              style={{width:"100%",padding:"14px",fontSize:14,background:ok()?G.green:"rgba(26,58,42,.06)",color:ok()?"#fff":"rgba(26,58,42,.18)",boxShadow:ok()?`0 8px 28px ${G.green}38`:"none"}}>
-              {qi===TOTAL-1 ? t.generate : t.next}
-            </button>
+            {/* 进度文字 */}
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:10,padding:"0 2px"}}>
+              <span style={{fontSize:11,color:safeQi>0?"rgba(26,58,42,.4)":"transparent",fontWeight:600}}>
+                {safeQi>0 ? `← ${t.back||"返回"}` : ""}
+              </span>
+              <span style={{fontSize:11,color:"rgba(26,58,42,.3)",fontWeight:600}}>
+                {safeQi+1} / {TOTAL}
+              </span>
+            </div>
+            {/* 按钮行 */}
+            <div style={{display:"flex",gap:10}}>
+              {safeQi > 0 && (
+                <button className="gbtn" onClick={()=>{setAnimK(k=>k+1);setQi(safeQi-1);}}
+                  style={{padding:"14px 20px",fontSize:14,background:"rgba(26,58,42,.06)",color:"rgba(26,58,42,.45)",boxShadow:"none",flexShrink:0}}>
+                  ←
+                </button>
+              )}
+              <button className="gbtn" disabled={!ok()} onClick={next}
+                style={{flex:1,padding:"14px",fontSize:14,background:ok()?G.green:"rgba(26,58,42,.06)",color:ok()?"#fff":"rgba(26,58,42,.18)",boxShadow:ok()?`0 8px 28px ${G.green}38`:"none"}}>
+                {safeQi===TOTAL-1 ? t.generate : t.next}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1388,19 +1666,72 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
   }
 
   // ── GENERATING ─────────────────────────────────────────────────────────────
-  if (phase === "gen") return (
-    <div style={{minHeight:"100vh",background:G.cream,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:20}}>
+  if (phase === "gen") {
+    const genTips = lang==="zh" ? [
+      "🔍 正在分析你的兴趣特质…",
+      "📊 计算五维能力画像…",
+      "🧠 匹配最适合你的成长原型…",
+      "🎯 生成专业方向匹配度…",
+      "✍️ 撰写你的个性化洞察…",
+      "🌟 报告即将完成，稍等片刻…",
+    ] : [
+      "🔍 Analyzing your interests & traits…",
+      "📊 Building your 5-dimension profile…",
+      "🧠 Matching your growth archetype…",
+      "🎯 Calculating major fit scores…",
+      "✍️ Writing your personalized insights…",
+      "🌟 Almost done, just a moment…",
+    ];
+    return (
+    <div style={{minHeight:"100vh",background:G.cream,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:24,padding:"40px 24px"}}>
       <style>{CSS}</style>
+
+      {/* 旋转动画 */}
       <div style={{position:"relative",width:88,height:88}}>
         {[88,62,38].map((s,i)=>(
           <div key={i} style={{position:"absolute",top:"50%",left:"50%",width:s,height:s,margin:`${-s/2}px 0 0 ${-s/2}px`,borderRadius:"50%",border:`2px solid ${[G.green,G.greenLt,G.sage][i]}`,borderTopColor:"transparent",animation:`spin ${1.7+i*.6}s linear infinite ${i%2?"reverse":""}` }}/>
         ))}
         <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",color:G.green,fontSize:22}}>✦</div>
       </div>
-      <div style={{fontFamily:"'Nunito',sans-serif",fontSize:15,fontWeight:700,color:G.greenDk}}>{t.loading[loadI]}{dots}</div>
-      <div style={{fontSize:9,opacity:.22,letterSpacing:3,fontWeight:800,fontFamily:"'Nunito',sans-serif"}}>STARPATH AI</div>
+
+      {/* 当前步骤提示 */}
+      <div style={{textAlign:"center",maxWidth:280}}>
+        <div style={{fontFamily:"'Nunito',sans-serif",fontSize:15,fontWeight:700,color:G.greenDk,marginBottom:6,minHeight:24}}>
+          {genTips[Math.min(loadI, genTips.length-1)]}
+        </div>
+        <div style={{fontSize:11,color:G.muted,fontFamily:"'Nunito',sans-serif"}}>
+          {lang==="zh" ? `AI 正在为你生成个性化报告，通常需要 20–30 秒` : `AI is generating your personalized report, usually 20–30 seconds`}
+        </div>
+      </div>
+
+      {/* 进度条 */}
+      <div style={{width:240,height:4,background:"rgba(26,58,42,.08)",borderRadius:2,overflow:"hidden"}}>
+        <div style={{
+          height:"100%",
+          background:`linear-gradient(90deg,${G.green},${G.greenLt})`,
+          borderRadius:2,
+          width:`${Math.min((loadI/Math.max(t.loading.length-1,1))*100, 92)}%`,
+          transition:"width 1.5s ease"
+        }}/>
+      </div>
+
+      {/* 步骤点 */}
+      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+        {genTips.map((_,i)=>(
+          <div key={i} style={{
+            width: i===Math.min(loadI,genTips.length-1) ? 18 : 6,
+            height:6,
+            borderRadius:3,
+            background: i<=loadI ? G.green : "rgba(26,58,42,.12)",
+            transition:"all .3s"
+          }}/>
+        ))}
+      </div>
+
+      <div style={{fontSize:9,opacity:.2,letterSpacing:3,fontWeight:800,fontFamily:"'Nunito',sans-serif"}}>STARPATH AI</div>
     </div>
   );
+  }
 
   // ── EMAIL GATE ─────────────────────────────────────────────────────────────
   if (phase === "gate") {
@@ -1442,10 +1773,7 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
             style={{width:"100%",padding:"13px",fontSize:14,background:G.green,color:"#fff",marginBottom:10,boxShadow:`0 6px 22px ${G.green}30`}}>
             {t.gateBtn}
           </button>
-          <button onClick={submitGate}
-            style={{width:"100%",background:"transparent",border:"none",padding:"8px",fontSize:12,color:G.muted,cursor:"pointer",fontFamily:"'Nunito',sans-serif",fontWeight:600}}>
-            {t.gateSkip}
-          </button>
+
           <p style={{fontSize:10,color:G.muted,opacity:.45,textAlign:"center",marginTop:12,lineHeight:1.7}}>{t.gateNote}</p>
         </div>
       </div>
@@ -1986,4 +2314,287 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
   }
 
   return null;
+}const getAgeGroup = (gradeVal) => {
+  const g = parseInt(gradeVal) || 0;
+  if (gradeVal === '5under' || g <= 5) return 'elementary';  // G5及以下
+  if (g <= 8) return 'middle';                               // G6-G8
+  return 'high';                                              // G9-12
+};
+
+const buildQ = (lang, ageGroup) => {
+  const zh = lang === "zh";
+  const ag = ageGroup || 'high'; // 默认高中组
+
+  // ── 公共 Profile 题 (所有年级都有)
+  const profileQ = [
+    { id:"pr1", sec:"profile", secLabel:zh?"基本定位":"Your Profile", secEmoji:"📋", secColor:G.blue,
+      type:"choice", text:zh?"你目前在几年级？":"What grade are you in?",
+      opts:[{l:zh?"5年级及以下":"Grade 5 & Under",v:"5under",e:"🌱"},{l:zh?"6年级":"Grade 6",v:"6",e:"🌿"},
+            {l:zh?"7年级":"Grade 7",v:"7",e:"🔥"},{l:zh?"8年级":"Grade 8",v:"8",e:"⚡"},
+            {l:zh?"9年级":"Grade 9",v:"9",e:"🚀"},{l:zh?"10年级":"Grade 10",v:"10",e:"⭐"},
+            {l:zh?"11年级":"Grade 11",v:"11",e:"💫"},{l:zh?"12年级":"Grade 12",v:"12",e:"🎓"}]},
+  ];
+
+  // ── G5及以下 题库（简单、图像化、探索导向）
+  const elementaryQ = [
+    { id:"el1", sec:"academic", secLabel:zh?"我的兴趣":"My Interests", secEmoji:"🔬", secColor:G.green,
+      type:"multi", max:3, text:zh?"你最喜欢做哪些事？（选最多3个）":"What do you love doing most? (pick up to 3)",
+      opts:[{l:zh?"画画/手工":"Drawing & Crafts",v:"arts",e:"🎨"},{l:zh?"搭积木/乐高":"Building & LEGO",v:"build",e:"🧱"},
+            {l:zh?"看书/讲故事":"Reading & Stories",v:"read",e:"📚"},{l:zh?"做实验/探索":"Experiments",v:"sci",e:"🔬"},
+            {l:zh?"唱歌/跳舞/表演":"Music & Performing",v:"perf",e:"🎵"},{l:zh?"玩游戏/解谜":"Games & Puzzles",v:"game",e:"🎮"},
+            {l:zh?"帮助他人":"Helping Others",v:"help",e:"🤝"},{l:zh?"大自然/动植物":"Nature & Animals",v:"nat",e:"🌿"}]},
+    { id:"el2", sec:"academic", secLabel:zh?"我的兴趣":"My Interests", secEmoji:"🔬", secColor:G.green,
+      type:"choice", text:zh?"你最喜欢哪种课？":"Which class do you enjoy most?",
+      opts:[{l:zh?"数学":"Math",v:"math",e:"🔢"},{l:zh?"科学":"Science",v:"sci",e:"🧪"},
+            {l:zh?"语文/英文":"Language Arts",v:"lang",e:"📝"},{l:zh?"美术/音乐":"Art & Music",v:"art",e:"🎨"},
+            {l:zh?"体育":"PE",v:"pe",e:"⚽"},{l:zh?"社会/历史":"Social Studies",v:"soc",e:"🌍"}]},
+    { id:"el3", sec:"strengths", secLabel:zh?"我的特点":"My Strengths", secEmoji:"⚡", secColor:G.amber,
+      type:"choice", text:zh?"你的朋友会怎么描述你？":"How would your friends describe you?",
+      opts:[{l:zh?"很有创意，总有新想法":"Creative & full of ideas",v:"creative",e:"💡"},
+            {l:zh?"做事认真，很负责":"Responsible & careful",v:"careful",e:"⭐"},
+            {l:zh?"喜欢帮助别人":"Kind & helpful",v:"kind",e:"💛"},
+            {l:zh?"爱问问题，好奇心强":"Curious & asks lots of questions",v:"curious",e:"🔍"},
+            {l:zh?"天生领袖，喜欢组织大家":"Natural leader",v:"leader",e:"👑"}]},
+    { id:"el4", sec:"strengths", secLabel:zh?"我的特点":"My Strengths", secEmoji:"⚡", secColor:G.amber,
+      type:"choice", text:zh?"你喜欢怎么完成作业或项目？":"How do you like to work?",
+      opts:[{l:zh?"自己独立完成":"By myself",v:"solo",e:"🦅"},
+            {l:zh?"和好朋友一起":"With close friends",v:"small",e:"👫"},
+            {l:zh?"大家一起合作":"In a big group",v:"group",e:"👥"}]},
+    { id:"el5", sec:"values", secLabel:zh?"我的梦想":"My Dreams", secEmoji:"🧭", secColor:G.purple,
+      type:"multi", max:3, text:zh?"长大后你想做什么样的事？（选最多3个）":"What kind of work excites you for the future? (up to 3)",
+      opts:[{l:zh?"帮助生病的人":"Help sick people",v:"med",e:"🏥"},{l:zh?"发明新东西":"Invent new things",v:"inv",e:"🔧"},
+            {l:zh?"保护地球环境":"Protect the Earth",v:"env",e:"🌍"},{l:zh?"创作艺术/音乐":"Create art or music",v:"art",e:"🎨"},
+            {l:zh?"教书/帮助孩子":"Teach or help kids",v:"edu",e:"📚"},{l:zh?"探索太空或科学":"Explore space or science",v:"sci",e:"🚀"},
+            {l:zh?"让社区变得更好":"Make community better",v:"comm",e:"🤝"},{l:zh?"建造房子或城市":"Build things",v:"build",e:"🏗"}]},
+    { id:"el6", sec:"values", secLabel:zh?"我的梦想":"My Dreams", secEmoji:"🧭", secColor:G.purple,
+      type:"open", minChars:1,
+      text:zh?"你最近做过一件让你特别开心或骄傲的事，是什么？":"Tell me about something you did recently that made you really happy or proud.",
+      ph:zh?"可以是学校里的，也可以是家里的任何事…":"School or home — anything that made you smile…"},
+    { id:"el7", sec:"strengths", secLabel:zh?"我的特点":"My Strengths", secEmoji:"⚡", secColor:G.amber,
+      type:"choice", text:zh?"你觉得自己学新东西的时候，哪种方式最容易懂？":"How do you learn new things best?",
+      opts:[{l:zh?"看老师演示，然后自己试":"Watch first, then try",v:"visual",e:"👀"},
+            {l:zh?"直接动手做做看":"Just dive in and do it",v:"hands",e:"🙌"},
+            {l:zh?"听别人讲解和解释":"Listen to explanations",v:"listen",e:"👂"},
+            {l:zh?"先自己琢磨，再问问题":"Think first, then ask",v:"think",e:"🤔"}]},
+    { id:"el8", sec:"academic", secLabel:zh?"我的兴趣":"My Interests", secEmoji:"🔬", secColor:G.green,
+      type:"choice", text:zh?"如果学校有一整天让你自由做任何事，你最想做什么？":"If you had a whole free day at school, what would you choose to do?",
+      opts:[{l:zh?"做一个发明或创作":"Build or create something",v:"make",e:"🔧"},
+            {l:zh?"读书或研究一个有趣的话题":"Read or research something cool",v:"read",e:"📚"},
+            {l:zh?"和朋友合作完成一个任务":"Work on a challenge with friends",v:"collab",e:"🤝"},
+            {l:zh?"在外面运动或探索自然":"Play outside or explore nature",v:"outside",e:"🌿"},
+            {l:zh?"画画、写故事或做音乐":"Draw, write stories, or make music",v:"create",e:"🎨"}]},
+    { id:"el9", sec:"values", secLabel:zh?"我的梦想":"My Dreams", secEmoji:"🧭", secColor:G.purple,
+      type:"multi", max:2, text:zh?"你觉得做什么事情最让你有满足感？（选2个）":"What makes you feel most proud of yourself? (pick 2)",
+      opts:[{l:zh?"学会了很难的东西":"Learning something really hard",v:"master",e:"🏆"},
+            {l:zh?"帮助了身边的人":"Helping someone around me",v:"help",e:"💛"},
+            {l:zh?"做出了独特的创作":"Creating something unique",v:"create",e:"🌟"},
+            {l:zh?"解决了一个难题":"Solving a tough problem",v:"solve",e:"🧩"},
+            {l:zh?"大家一起完成了一件事":"Achieving something as a team",v:"team",e:"🤝"}]},
+  ];
+
+  // ── G6-G8 题库（探索+自我发现）
+  const middleQ = [
+    { id:"ms1", sec:"academic", secLabel:zh?"学科兴趣":"Academics", secEmoji:"🔬", secColor:G.green,
+      type:"multi", max:3, text:zh?"你最喜欢哪些课？（最多3个）":"Your favorite subjects? (up to 3)",
+      opts:[{l:zh?"数学":"Math",v:"math",e:"🔢"},{l:zh?"科学/实验":"Science & Lab",v:"sci",e:"🔬"},
+            {l:zh?"计算机/编程":"CS & Coding",v:"cs",e:"💻"},{l:zh?"语文/写作":"Language & Writing",v:"eng",e:"✍️"},
+            {l:zh?"历史/社会":"History & Social",v:"hist",e:"📜"},{l:zh?"艺术/音乐":"Arts & Music",v:"arts",e:"🎨"},
+            {l:zh?"体育":"PE & Sports",v:"pe",e:"⚽"},{l:zh?"外语":"Foreign Language",v:"lang",e:"🗣"}]},
+    { id:"ms2", sec:"academic", secLabel:zh?"学科兴趣":"Academics", secEmoji:"🔬", secColor:G.green,
+      type:"choice", text:zh?"课外你会主动去了解什么？":"What do you voluntarily explore outside school?",
+      opts:[{l:zh?"科技/游戏/编程":"Tech, games & coding",v:"tech",e:"🤖"},
+            {l:zh?"艺术/音乐/动漫":"Art, music & animation",v:"art",e:"🎨"},
+            {l:zh?"运动/健身":"Sports & fitness",v:"sports",e:"⚽"},
+            {l:zh?"动物/自然/环境":"Nature & environment",v:"nat",e:"🌿"},
+            {l:zh?"历史故事/人物传记":"History & biographies",v:"hist",e:"📖"},
+            {l:zh?"社会问题/新闻":"Current events & news",v:"news",e:"🌍"}]},
+    { id:"ms3", sec:"strengths", secLabel:zh?"优势与才干":"Strengths", secEmoji:"⚡", secColor:G.amber,
+      type:"multi", max:3, text:zh?"同学最常来找你帮什么？":"What do classmates come to you for? (up to 3)",
+      opts:[{l:zh?"讲解题目/知识":"Explaining & teaching",v:"teach",e:"📖"},
+            {l:zh?"出创意/想方案":"Ideas & creativity",v:"idea",e:"💡"},
+            {l:zh?"帮忙写作/改文章":"Writing & editing",v:"write",e:"✍️"},
+            {l:zh?"技术/电脑问题":"Tech help",v:"tech",e:"💻"},
+            {l:zh?"组织活动":"Organizing events",v:"org",e:"📋"},
+            {l:zh?"倾听与支持":"Listening & support",v:"emp",e:"💛"},
+            {l:zh?"设计/美化":"Design & visuals",v:"des",e:"🎨"}]},
+    { id:"ms4", sec:"strengths", secLabel:zh?"优势与才干":"Strengths", secEmoji:"⚡", secColor:G.amber,
+      type:"choice", text:zh?"小组项目里，你通常做什么？":"In group projects, what do you naturally do?",
+      opts:[{l:zh?"提出点子和方向":"Come up with ideas",v:"vis",e:"🌟"},
+            {l:zh?"做计划和分工":"Plan & organize",v:"exe",e:"⚙️"},
+            {l:zh?"负责研究和收集资料":"Research & gather info",v:"res",e:"🔬"},
+            {l:zh?"协调大家、解决矛盾":"Keep the team together",v:"med",e:"🤝"},
+            {l:zh?"最后打磨成品":"Polish & perfect the final product",v:"fin",e:"✨"}]},
+    { id:"ms5", sec:"values", secLabel:zh?"价值观":"Values", secEmoji:"🧭", secColor:G.purple,
+      type:"multi", max:3, text:zh?"做事情，什么让你最有动力？（选3个）":"What motivates you most? (pick 3)",
+      opts:[{l:zh?"真正搞懂一件事":"Understanding things deeply",v:"mas",e:"🔍"},
+            {l:zh?"帮助到别人":"Making a difference for others",v:"imp",e:"🌍"},
+            {l:zh?"被表扬和认可":"Recognition & praise",v:"rec",e:"⭐"},
+            {l:zh?"挑战自己，突破极限":"Pushing my limits",v:"chal",e:"🔥"},
+            {l:zh?"和好朋友一起做事":"Working with friends",v:"col",e:"🤝"},
+            {l:zh?"自己做主，不被约束":"Freedom to do things my way",v:"aut",e:"🦅"},
+            {l:zh?"解决真实的问题":"Solving real problems",v:"sol",e:"🧩"},
+            {l:zh?"创作出独特的东西":"Creating something unique",v:"exp",e:"🎨"}]},
+    { id:"ms6", sec:"values", secLabel:zh?"价值观":"Values", secEmoji:"🧭", secColor:G.purple,
+      type:"choice", text:zh?"你在课外有没有认真投入过一件事？":"Have you seriously committed to something outside school?",
+      opts:[{l:zh?"有，坚持很久了":"Yes — for a long time",v:"yes",e:"🏆"},
+            {l:zh?"有，但还在起步阶段":"Yes — just getting started",v:"start",e:"🌱"},
+            {l:zh?"有想法但还没开始":"Have ideas but haven't started",v:"idea",e:"💭"},
+            {l:zh?"还没有，在探索中":"Not yet — still exploring",v:"no",e:"🔍"}]},
+    { id:"ms7", sec:"activities", secLabel:zh?"经历与活动":"Experience", secEmoji:"🏆", secColor:G.rose,
+      type:"open", minChars:1,
+      text:zh?"描述一件你最近做过的、让你感觉特别投入或骄傲的事。":"Tell me about something you did recently that you were really into or proud of.",
+      ph:zh?"学校里或课外都可以，说说你做了什么…":"School or outside — what did you do?"},
+    { id:"ms8", sec:"strengths", secLabel:zh?"优势与才干":"Strengths", secEmoji:"⚡", secColor:G.amber,
+      type:"choice", text:zh?"你通常怎么学新东西学得最快？":"How do you learn new things most effectively?",
+      opts:[{l:zh?"看视频、图表或演示":"Videos, visuals & demos",v:"visual",e:"👀"},
+            {l:zh?"直接动手做、边做边学":"Hands-on, learn by doing",v:"hands",e:"🙌"},
+            {l:zh?"听讲解、记笔记":"Listening & note-taking",v:"listen",e:"📝"},
+            {l:zh?"自己研究、独立思考":"Self-study & independent thinking",v:"solo",e:"🔍"},
+            {l:zh?"和别人讨论、互相解释":"Discussion & peer learning",v:"discuss",e:"💬"}]},
+    { id:"ms9", sec:"academic", secLabel:zh?"学科兴趣":"Academics", secEmoji:"🔬", secColor:G.green,
+      type:"multi", max:3, text:zh?"你在学校外面有没有认真做过以下任何事？（选所有符合的）":"Have you seriously done any of these outside school? (select all that apply)",
+      opts:[{l:zh?"自学一门技能（编程、乐器等）":"Self-taught a skill (coding, instrument, etc.)",v:"self",e:"💡"},
+            {l:zh?"参加过比赛或考级":"Competed or tested in something",v:"comp",e:"🏆"},
+            {l:zh?"做过义工或社区服务":"Volunteered or served community",v:"vol",e:"🌍"},
+            {l:zh?"创作过作品（绘画、写作、视频等）":"Created original work",v:"create",e:"🎨"},
+            {l:zh?"参加过夏令营或特殊课程":"Attended camps or special programs",v:"camp",e:"🏕"},
+            {l:zh?"以上都没有，还在探索":"None yet — still exploring",v:"none",e:"🌱"}]},
+    { id:"ms10", sec:"values", secLabel:zh?"价值观":"Values", secEmoji:"🧭", secColor:G.purple,
+      type:"choice", text:zh?"你觉得上高中最重要的事是什么？":"What do you think matters most in high school?",
+      opts:[{l:zh?"成绩好，为大学做准备":"Good grades & college prep",v:"grades",e:"📊"},
+            {l:zh?"找到真正感兴趣的方向":"Finding what genuinely interests me",v:"passion",e:"🔍"},
+            {l:zh?"建立友谊和社交圈":"Building friendships & connections",v:"social",e:"🤝"},
+            {l:zh?"发展一项特别擅长的技能":"Developing a standout skill",v:"skill",e:"⚡"},
+            {l:zh?"有意义的经历和成长":"Meaningful experiences & growth",v:"growth",e:"🌱"}]},
+    { id:"ms11", sec:"activities", secLabel:zh?"经历与活动":"Experience", secEmoji:"🏆", secColor:G.rose,
+      type:"multi", max:3, text:zh?"你最希望在初高中阶段尝试什么？（最多3个）":"What would you most like to try in middle/high school? (up to 3)",
+      opts:[{l:zh?"学习编程或科技技能":"Learn coding or tech skills",v:"tech",e:"💻"},
+            {l:zh?"参加体育队或运动":"Join a sports team",v:"sports",e:"⚽"},
+            {l:zh?"参与艺术或表演":"Arts or performing",v:"arts",e:"🎭"},
+            {l:zh?"做科学实验或研究":"Science experiments or research",v:"sci",e:"🔬"},
+            {l:zh?"组织或参与社区活动":"Organize or join community projects",v:"comm",e:"🌍"},
+            {l:zh?"创业或做一个自己的项目":"Start my own project or business",v:"own",e:"🚀"},
+            {l:zh?"写作、出版或创作内容":"Writing, publishing, or content creation",v:"write",e:"✍️"}]},
+  ];
+
+  // ── G9-12 题库（完整版，原有题库）
+  const highQ = [
+    { id:"pr2", sec:"profile", secLabel:zh?"基本定位":"Your Profile", secEmoji:"📋", secColor:G.blue,
+      type:"multi", max:3, text:zh?"你就读的学校类型？（可多选）":"What describes your school? (select all that apply)",
+      opts:[{l:zh?"美国公立高中":"US Public School",v:"us_public",e:"🏫"},
+            {l:zh?"美国私立高中":"US Private School",v:"us_private",e:"🏛"},
+            {l:zh?"提供 IB 课程":"Offers IB Track",v:"ib",e:"🌍"},
+            {l:zh?"提供 AP 课程":"Offers AP Track",v:"ap",e:"📘"},
+            {l:zh?"国际学校（海外）":"International School (Overseas)",v:"intl",e:"🌏"},
+            {l:zh?"寄宿学校":"Boarding School",v:"boarding",e:"🏰"},
+            {l:zh?"其他":"Other",v:"other",e:"🌐"}]},
+    { id:"pr3", sec:"profile", secLabel:zh?"基本定位":"Your Profile", secEmoji:"📋", secColor:G.blue,
+      type:"multi", max:3, text:zh?"你感觉比较强的科目？（最多3个）":"Your strongest subjects? (up to 3)",
+      opts:[{l:zh?"数学":"Math",v:"math",e:"🔢"},{l:zh?"理科":"Sciences",v:"sci",e:"🔬"},
+            {l:zh?"计算机/编程":"CS / Coding",v:"cs",e:"💻"},{l:zh?"英语/写作":"English / Writing",v:"eng",e:"✍️"},
+            {l:zh?"历史/社会":"History / Social",v:"hist",e:"📜"},{l:zh?"经济学":"Economics",v:"econ",e:"📊"},
+            {l:zh?"艺术/设计/音乐":"Arts / Music",v:"arts",e:"🎨"},{l:zh?"外语":"Foreign Language",v:"lang",e:"🗣"}]},
+    { id:"pr4", sec:"profile", secLabel:zh?"基本定位":"Your Profile", secEmoji:"📋", secColor:G.blue,
+      type:"multi", max:2, text:zh?"你目前参加的课外活动？（选你真正在做的）":"Your current extracurriculars? (pick what you actually do)",
+      opts:[{l:zh?"体育运动":"Sports",v:"sports",e:"⚽"},{l:zh?"学术竞赛":"Competitions",v:"comp",e:"🏆"},
+            {l:zh?"艺术/音乐/戏剧":"Arts / Music",v:"arts",e:"🎭"},{l:zh?"社区服务":"Community Service",v:"comm",e:"🤝"},
+            {l:zh?"学生会/领导":"Student Leadership",v:"lead",e:"🎤"},{l:zh?"科研/实验室":"Research / Lab",v:"res",e:"🔭"},
+            {l:zh?"创业/商业":"Entrepreneurship",v:"biz",e:"💡"},{l:zh?"暂时没有固定活动":"Nothing formal yet",v:"none",e:"🌱"}]},
+    { id:"ac1", sec:"academic", secLabel:zh?"学科兴趣":"Academics", secEmoji:"🔬", secColor:G.green,
+      type:"choice", text:zh?"你最想深入研究哪类问题？":"What kind of problems fascinate you most?",
+      opts:[{l:zh?"探索规律和原理（为什么）":"Why — patterns & principles",v:"analytical",e:"🔍"},
+            {l:zh?"设计方案，动手实现（怎么做）":"How — design & build",v:"applied",e:"🛠"},
+            {l:zh?"理解人类行为和社会":"Human behavior & society",v:"humanistic",e:"🧠"},
+            {l:zh?"探讨价值观和公平正义":"Ethics, values & justice",v:"normative",e:"⚖️"},
+            {l:zh?"用创意和艺术表达想法":"Creative & artistic expression",v:"creative",e:"🎨"}]},
+    { id:"ac2", sec:"academic", secLabel:zh?"学科兴趣":"Academics", secEmoji:"🔬", secColor:G.green,
+      type:"multi", max:3, text:zh?"你课外会主动去了解的话题？（最多3个）":"Topics you voluntarily explore outside school? (up to 3)",
+      opts:[{l:zh?"AI / 科技":"AI / Tech",v:"tech",e:"🤖"},{l:zh?"气候 / 环境":"Climate",v:"env",e:"🌍"},
+            {l:zh?"心理学":"Psychology",v:"psych",e:"🧠"},{l:zh?"商业 / 金融":"Business",v:"biz",e:"📈"},
+            {l:zh?"政治 / 国际关系":"Politics / IR",v:"pol",e:"🌐"},{l:zh?"医学 / 生命科学":"Medicine",v:"bio",e:"🏥"},
+            {l:zh?"数学 / 物理 / 工程":"STEM",v:"stem",e:"⚙️"},{l:zh?"文学 / 哲学":"Humanities",v:"hum",e:"📚"},
+            {l:zh?"艺术 / 设计":"Art / Design",v:"des",e:"🏛"},{l:zh?"社会议题 / 公益":"Social Justice",v:"soc",e:"✊"}]},
+    { id:"ac3", sec:"academic", secLabel:zh?"学科兴趣":"Academics", secEmoji:"🔬", secColor:G.green,
+      type:"choice", text:zh?"什么样的课堂让你最投入？":"What kind of class engages you most?",
+      opts:[{l:zh?"讨论课——辩论观点":"Discussion & debate",v:"disc",e:"💬"},
+            {l:zh?"实验课——动手操作":"Lab & hands-on",v:"lab",e:"🧪"},
+            {l:zh?"讲座课——深度知识":"Lecture & deep knowledge",v:"lec",e:"📖"},
+            {l:zh?"项目课——做完整作品":"Project-based",v:"proj",e:"🚀"}]},
+    { id:"ac4", sec:"academic", secLabel:zh?"学科兴趣":"Academics", secEmoji:"🔬", secColor:G.green,
+      type:"open", minChars:1,
+      text:zh?"有没有一个问题或话题，是你课外会自己去深挖的？是什么，为什么让你着迷？":"Is there a topic you explore on your own outside school? What and why does it fascinate you?",
+      ph:zh?"可以是任何领域，不一定和学校课程有关…":"Anything — doesn't need to be school-related…"},
+    { id:"st1", sec:"strengths", secLabel:zh?"优势与才干":"Strengths", secEmoji:"⚡", secColor:G.amber,
+      type:"multi", max:4, text:zh?"同学最常来找你帮什么忙？（最多4个，选真实做过的）":"What do classmates most often ask you for? (up to 4, be honest)",
+      opts:[{l:zh?"解题/讲知识点":"Explaining / tutoring",v:"teach",e:"📖"},
+            {l:zh?"出主意/想创意":"Ideas & creative solutions",v:"idea",e:"💡"},
+            {l:zh?"写作/改文章":"Writing & editing",v:"write",e:"✍️"},
+            {l:zh?"分析/逻辑推理":"Analysis & logic",v:"anal",e:"📊"},
+            {l:zh?"组织活动/推项目":"Organizing & managing",v:"org",e:"📋"},
+            {l:zh?"倾听和情感支持":"Listening & support",v:"emp",e:"💛"},
+            {l:zh?"编程/技术":"Coding & tech",v:"code",e:"💻"},
+            {l:zh?"设计/视觉":"Design & visuals",v:"des",e:"🎨"}]},
+    { id:"st2", sec:"strengths", secLabel:zh?"优势与才干":"Strengths", secEmoji:"⚡", secColor:G.amber,
+      type:"choice", text:zh?"团队项目里，你自然承担什么角色？":"In group projects, what role do you naturally take?",
+      opts:[{l:zh?"提出方向和创意":"Visionary / idea-setter",v:"vis",e:"🌟"},
+            {l:zh?"做计划、推进执行":"Planner & executor",v:"exe",e:"⚙️"},
+            {l:zh?"协调成员、解决矛盾":"Mediator & team glue",v:"med",e:"🤝"},
+            {l:zh?"深度研究、知识支撑":"Deep researcher & expert",v:"res",e:"🔬"},
+            {l:zh?"打磨成品、注重细节":"Finisher & detail person",v:"fin",e:"✨"}]},
+    { id:"st3", sec:"strengths", secLabel:zh?"优势与才干":"Strengths", secEmoji:"⚡", secColor:G.amber,
+      type:"scale", leftLabel:zh?"独立深度专注":"Solo deep focus", rightLabel:zh?"多线并行推进":"Juggling many things"},
+    { id:"st4", sec:"strengths", secLabel:zh?"优势与才干":"Strengths", secEmoji:"⚡", secColor:G.amber,
+      type:"open", minChars:1,
+      text:zh?"描述一件让你感觉「我真的很擅长这个」的事。具体说你做了什么，结果是什么。":"Describe something where you felt "I'm genuinely good at this." What did you do and what happened?",
+      ph:zh?"可以是学校里的，也可以是课外的任何事…":"Academic or extracurricular — anything real…"},
+    { id:"va1", sec:"values", secLabel:zh?"价值观":"Values & Drive", secEmoji:"🧭", secColor:G.purple,
+      type:"multi", max:3, text:zh?"你学习和做事的核心驱动力？（选3个最真实的）":"Your core motivators? (pick the 3 most honest)",
+      opts:[{l:zh?"真正搞懂深层原理":"Deep understanding",v:"mas",e:"🔍"},
+            {l:zh?"做出能帮助他人的东西":"Creating impact",v:"imp",e:"🌍"},
+            {l:zh?"被认可，证明自己":"Recognition & validation",v:"rec",e:"⭐"},
+            {l:zh?"挑战极限，突破自己":"Pushing my limits",v:"chal",e:"🔥"},
+            {l:zh?"和志同道合的人协作":"Collaborating with great people",v:"col",e:"🤝"},
+            {l:zh?"掌控自己的时间和选择":"Autonomy & freedom",v:"aut",e:"🦅"},
+            {l:zh?"解决真实存在的问题":"Solving real problems",v:"sol",e:"🧩"},
+            {l:zh?"创造美的东西，表达自己":"Creating & expressing",v:"exp",e:"🎨"}]},
+    { id:"va2", sec:"values", secLabel:zh?"价值观":"Values & Drive", secEmoji:"🧭", secColor:G.purple,
+      type:"choice", text:zh?"你希望大学4年能带给你什么？":"What do you most want from 4 years of college?",
+      opts:[{l:zh?"在某个领域打下深厚基础":"Deep expertise in one field",v:"depth",e:"🏆"},
+            {l:zh?"广泛探索，找到热爱":"Broad exploration to find passion",v:"expl",e:"🗺"},
+            {l:zh?"建立人脉和资源":"Network & opportunities",v:"net",e:"🤝"},
+            {l:zh?"做真正有价值的项目":"Producing meaningful work",v:"cre",e:"🚀"}]},
+    { id:"va3", sec:"values", secLabel:zh?"价值观":"Values & Drive", secEmoji:"🧭", secColor:G.purple,
+      type:"open", minChars:1,
+      text:zh?"如果你可以用大学4年做一件对世界有意义的事，你会做什么？":"If you could use 4 years of college to do one meaningful thing for the world, what would it be?",
+      ph:zh?"不用考虑现不现实，说说你真正在意的事…":"Dream big — what genuinely matters to you?"},
+    { id:"act1", sec:"activities", secLabel:zh?"经历与活动":"Experience", secEmoji:"🏆", secColor:G.rose,
+      type:"choice", text:zh?"你在课外活动中通常处于什么位置？":"In your extracurriculars, what position do you usually hold?",
+      opts:[{l:zh?"领导或负责人":"Leader / organizer",v:"lead",e:"👑"},
+            {l:zh?"核心成员，承担重要任务":"Core member with key responsibilities",v:"core",e:"⭐"},
+            {l:zh?"普通参与者，认真投入":"Regular participant, genuinely committed",v:"part",e:"🙋"},
+            {l:zh?"刚开始，还在找方向":"Just starting, exploring",v:"new",e:"🌱"}]},
+    { id:"act2", sec:"activities", secLabel:zh?"经历与活动":"Experience", secEmoji:"🏆", secColor:G.rose,
+      type:"choice", text:zh?"你有没有独立发起过或主导过一个项目/活动？":"Have you independently started or led a project?",
+      opts:[{l:zh?"有，做出了真实成果":"Yes — with real outcomes",v:"yes",e:"🚀"},
+            {l:zh?"有，还在进行中":"Yes — still in progress",v:"wip",e:"⚡"},
+            {l:zh?"有想法，还没行动":"Have an idea, haven't started",v:"idea",e:"💭"},
+            {l:zh?"还没有":"Not yet",v:"no",e:"🌱"}]},
+    { id:"act3", sec:"activities", secLabel:zh?"经历与活动":"Experience", secEmoji:"🏆", secColor:G.rose,
+      type:"multi", max:3, text:zh?"你希望在高中尝试哪类背景提升？（最多3个）":"Which activities genuinely interest you? (up to 3)",
+      opts:[{l:zh?"学术科研":"Research",v:"res",e:"🔬"},{l:zh?"学术竞赛":"Competitions",v:"comp",e:"🏆"},
+            {l:zh?"创业/社会企业":"Startup / social enterprise",v:"start",e:"💡"},
+            {l:zh?"公益/社会影响":"Community impact",v:"serv",e:"🌍"},
+            {l:zh?"艺术/创意作品集":"Arts portfolio",v:"arts",e:"🎨"},
+            {l:zh?"夏校或学术项目":"Summer programs",v:"sum",e:"🏫"},
+            {l:zh?"写作出版":"Writing & publishing",v:"write",e:"✍️"},
+            {l:zh?"技术项目":"Tech project",v:"tech",e:"💻"}]},
+    { id:"act4", sec:"activities", secLabel:zh?"经历与活动":"Experience", secEmoji:"🏆", secColor:G.rose,
+      type:"open", minChars:1,
+      text:zh?"描述你做过的一件课外事——你真正在乎过、投入过时间的。是什么，你做了什么，为什么重要？":"Describe one thing outside school you genuinely cared about and put real time into.",
+      ph:zh?"不管大小，只要是真实投入的…":"Big or small — just something real…"},
+  ];
+
+  if (ag === 'elementary') return [...profileQ, ...elementaryQ];
+  if (ag === 'middle') return [...profileQ, ...middleQ];
+  return [...profileQ, ...highQ];
 }
