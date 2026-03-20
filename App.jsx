@@ -23,7 +23,7 @@ const G = {
 const T = {
   zh: {
     brand: "STARPATH FINDER", byLine: "星途潜能测试",
-    tagline: "看清你的升学路径与成长方向",
+    tagline: "看清你的升学路径",
     subtitle: "AI分析你的兴趣、能力与经历，生成专属升学路径与大学建议",
     start: "生成我的升学路径",
     startNote: "免费生成专属升学路径报告 · 约15分钟完成",
@@ -82,7 +82,7 @@ const T = {
   },
   en: {
     brand: "STARPATH FINDER", byLine: "星途潜能测试",
-    tagline: "Unlock Your Best-Fit College Path & Future Blueprint",
+    tagline: "Unlock Your Best-Fit College Path",
     subtitle: "Get a personalized college path, major fit, and growth strategy — powered by AI",
     start: "Generate My College Path",
     startNote: "Free personalized college path report · ~15 min",
@@ -650,6 +650,16 @@ export default function StarPathC() {
   };
 
   // 加载分享报告（从 URL hash）
+  // 动态更新浏览器标签 title
+  useEffect(() => {
+    const zh = lang === 'zh';
+    if (zh) {
+      document.title = 'AI升学路径测评 | StarPath Finder · College Path Report';
+    } else {
+      document.title = 'StarPath Finder | AI升学路径测评';
+    }
+  }, [lang]);
+
   useEffect(() => {
     const hash = window.location.hash;
     if (!hash) return;
@@ -1276,7 +1286,7 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
 .hi{background:#F5F9F3;border-left:3px solid #6AAF3D;padding:7px 11px;margin-top:7px;font-size:${zh?'10px':'9.5px'};line-height:1.75;color:#1E2B1E;border-radius:0 5px 5px 0;}
 
 /* RADAR + STRENGTHS — Chinese: side by side, English: radar full then strengths */
-.rc{display:block;padding:${zh?'8px 22px':'9px 22px'};border-bottom:1px solid #EAF2E5;break-inside:avoid;page-break-inside:avoid;}.rc>div{margin-bottom:12px;}
+.rc{display:block;padding:${zh?'8px 22px':'9px 22px'};border-bottom:1px solid #EAF2E5;}.rc>div{margin-bottom:12px;}.rc svg{display:block;margin:0 auto;}.rc .lbl{text-align:center;}
 .sr{display:flex;gap:7px;padding:4px 0;border-bottom:1px solid rgba(26,58,42,.05);align-items:flex-start;}
 .si{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;font-weight:900;}
 .sn{font-size:${zh?'10px':'9.5px'};font-weight:800;color:#1A3A2A;margin-bottom:1px;}
@@ -1323,7 +1333,7 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
   <div class="report-date">${zh?"星途成长报告":"Growth Profile Report"} · ${new Date().toLocaleDateString(zh?'zh-CN':'en-US')}</div>
 </div>
 
-<div class="hero">
+<div style="break-inside:avoid;page-break-inside:avoid"><div class="hero">
   ${P.snap?.archetype?`<div class="badge">${P.snap.archetype}</div>`:''}
   ${name?`<div class="meta">${name} · ${t.grade(P.snap?.grade||'')} · ${t.school(P.snap?.schoolType||'')}</div>`:''}
   <div class="personality">${P.snap?.personality||''}</div>
@@ -1333,8 +1343,8 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
 
 <!-- RADAR + STRENGTHS -->
 <div class="rc">
-  <div>
-    <div class="lbl">${zh?"五维能力画像":"Capability Profile"}</div>
+  <div style="text-align:center">
+    <div class="lbl" style="text-align:center">${zh?"五维能力画像":"Capability Profile"}</div>
     ${(()=>{
       const W=zh?300:290, H=zh?300:290;
       const cx=W/2, cy=H/2;
@@ -1378,6 +1388,7 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
     <div class="gbox">${P.summary?.watchOut||''}</div>
   </div>
 </div>
+</div><!-- /hero-rc-wrap -->
 
 <!-- KEY INSIGHT -->
 <div class="S">
