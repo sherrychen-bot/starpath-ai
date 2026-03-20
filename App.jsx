@@ -23,8 +23,8 @@ const G = {
 const T = {
   zh: {
     brand: "STARPATH FINDER", byLine: "星途潜能测试",
-    tagline: "发现你的升学路径与成长方向",
-    subtitle: "AI分析你的兴趣、能力与经历\n生成专属升学路径与大学方向建议",
+    tagline: "看清你的升学路径与成长方向",
+    subtitle: "AI分析你的兴趣、能力与经历，生成专属升学路径与大学建议",
     start: "生成我的升学路径",
     startNote: "免费生成专属升学路径报告 · 约15分钟完成",
     next: "下一题 →", generate: "生成我的升学画像 ✦",
@@ -82,8 +82,8 @@ const T = {
   },
   en: {
     brand: "STARPATH FINDER", byLine: "星途潜能测试",
-    tagline: "Discover Your College Path & Growth Direction",
-    subtitle: "AI analyzes your interests, strengths & experiences\nto generate your personalized college path & major recommendations.",
+    tagline: "Unlock Your Best-Fit College Path & Future Blueprint",
+    subtitle: "Get a personalized college path, major fit, and growth strategy — powered by AI",
     start: "Generate My College Path",
     startNote: "Free personalized college path report · ~15 min",
     next: "Next →", generate: "Generate My Profile ✦",
@@ -1276,7 +1276,7 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
 .hi{background:#F5F9F3;border-left:3px solid #6AAF3D;padding:7px 11px;margin-top:7px;font-size:${zh?'10px':'9.5px'};line-height:1.75;color:#1E2B1E;border-radius:0 5px 5px 0;}
 
 /* RADAR + STRENGTHS — Chinese: side by side, English: radar full then strengths */
-.rc{display:grid;grid-template-columns:${zh?'185px 1fr':'175px 1fr'};gap:14px;padding:${zh?'8px 22px':'9px 22px'};border-bottom:1px solid #EAF2E5;break-inside:avoid;page-break-inside:avoid;align-items:start;}
+.rc{display:block;padding:${zh?'8px 22px':'9px 22px'};border-bottom:1px solid #EAF2E5;break-inside:avoid;page-break-inside:avoid;}.rc>div{margin-bottom:12px;}
 .sr{display:flex;gap:7px;padding:4px 0;border-bottom:1px solid rgba(26,58,42,.05);align-items:flex-start;}
 .si{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;font-weight:900;}
 .sn{font-size:${zh?'10px':'9.5px'};font-weight:800;color:#1A3A2A;margin-bottom:1px;}
@@ -2086,8 +2086,8 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
                 return (
                   <div className="card" style={{padding:"24px 20px 16px"}}>
                     <div className="sl">{t.lRadar}</div>
-                    <ResponsiveContainer width="100%" height={260}>
-                      <RadarChart data={data} margin={{top:16,right:50,bottom:16,left:50}}>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <RadarChart data={data} margin={{top:30,right:70,bottom:30,left:70}}>
                         <defs>
                           <radialGradient id="radarFill" cx="50%" cy="50%" r="50%">
                             <stop offset="0%" stopColor={G.green} stopOpacity={0.25}/>
