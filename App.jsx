@@ -145,7 +145,7 @@ const T = {
 const SECS = (lang) => {
   const zh = lang === "zh";
   return [
-    {id:"profile",    label:zh?"个人定位":"Personal Profile",  emoji:"🎯", color:G.blue},
+    {id:"profile",    label:zh?"基本信息":"Personal Profile",  emoji:"🎯", color:G.blue},
     {id:"academic",   label:zh?"学术兴趣":"Academics",      emoji:"📚", color:G.green},
     {id:"strengths",  label:zh?"核心优势":"Strengths",      emoji:"⚡", color:G.amber},
     {id:"values",     label:zh?"价值观":"Values & Drive",   emoji:"🧭", color:G.purple},
@@ -275,6 +275,7 @@ textarea,input{font-family:'Nunito',sans-serif;outline:none;}
 .ifield{width:100%;padding:12px 15px;border:1.5px solid rgba(26,58,42,.14);border-radius:10px;font-size:14px;font-family:'Nunito',sans-serif;color:#1E2B1E;background:#F5F9F3;transition:border-color .2s,background .2s;}
 .ifield:focus{border-color:#6AAF3D;background:#fff;}
 
+.lbtn-inline{position:relative;padding:4px 12px;border-radius:20px;font-size:11px;font-family:'Nunito',sans-serif;font-weight:700;cursor:pointer;background:rgba(26,58,42,.06);border:1px solid rgba(26,58,42,.12);color:rgba(26,58,42,.45);}
 .lbtn{position:fixed;top:16px;right:16px;z-index:200;padding:6px 14px;border-radius:20px;font-size:11px;font-family:'Nunito',sans-serif;font-weight:700;cursor:pointer;background:rgba(26,58,42,.06);border:1px solid rgba(26,58,42,.12);color:rgba(26,58,42,.45);transition:all .2s;}
 .lbtn:hover{background:rgba(26,58,42,.1);color:rgba(26,58,42,.8);}
 `;
@@ -656,7 +657,7 @@ export default function StarPathC() {
     // 短链接格式 #id=xxxxxxxx → 从 GAS 读取完整报告
     if (hash.startsWith('#id=')) {
       const id = hash.slice(4);
-      jsonpCall("https://script.google.com/macros/s/AKfycbxfX4wPoLml4SffUSibaL63thjje2ykdXU0B358-ROjFmBOku-fm1wOA3yktFHeWTIL/exec?id=" + id)
+      jsonpCall("https://script.google.com/macros/s/AKfycbxfX4wPoLml4SffUSibaL63thjje2ykdXU0B358-ROjFmBOku-fm1wOA3yktFHeWTIL/exec?action=load&id=" + id)
         .then(json => {
           if (json.ok && json.payload && json.payload.p) {
             setProfile(json.payload.p);
@@ -977,7 +978,7 @@ export default function StarPathC() {
     const timer = setTimeout(() => {
       cleanup();
       reject(new Error('timeout'));
-    }, 15000);
+    }, 8000);
     function cleanup() {
       clearTimeout(timer);
       delete window[cbName];
@@ -997,29 +998,44 @@ export default function StarPathC() {
     const top1 = profile.majors?.[0]?.name || "";
     const baseUrl = window.location.href.split('#')[0].split('?')[0];
 
-    // 保存完整报告到 GAS → 返回 8 字符 ID → 链接约 42 字符
     let reportUrl;
     try {
-      const payload = JSON.stringify({ p: profile, n: name, l: lang });
-      const url = "https://script.google.com/macros/s/AKfycbxfX4wPoLml4SffUSibaL63thjje2ykdXU0B358-ROjFmBOku-fm1wOA3yktFHeWTIL/exec?action=save&data=" + encodeURIComponent(payload);
-      const json = await jsonpCall(url);
+      // 精简 payload：只保留报告核心字段，减小数据量
+      const slim = {
+        snap:    profile.snap,
+        summary: profile.summary,
+        radar:   profile.radar,
+        strengths: profile.strengths,
+        directions: profile.directions,
+        majors:  (profile.majors||[]).slice(0,4),
+        next:    profile.next,
+        ec:      profile.ec,
+      };
+      const payload = JSON.stringify({ p: slim, n: name || "", l: lang });
+      const encoded = encodeURIComponent(payload);
+      // 检查 URL 长度（GAS 最大约 8000 字符）
+      const GAS = "https://script.google.com/macros/s/AKfycbxfX4wPoLml4SffUSibaL63thjje2ykdXU0B358-ROjFmBOku-fm1wOA3yktFHeWTIL/exec";
+      const saveUrl = GAS + "?action=save&data=" + encoded;
+      const json = await jsonpCall(saveUrl);
       if (json.ok && json.id) {
-        reportUrl = baseUrl + '#id=' + json.id;
+        reportUrl = baseUrl + "#id=" + json.id;
       } else {
-        throw new Error('no id');
+        throw new Error("GAS returned: " + JSON.stringify(json));
       }
     } catch(e) {
       setShareLoading(false);
-      alert(zh2 ? '生成链接失败，请下载报告后分享。' : 'Failed to generate link, please download the report to share.');
+      // 不用 alert，显示带链接的弹窗提示
+      const errMsg = zh2
+        ? "链接生成失败，你可以直接复制当前页面网址分享。\n\n" + window.location.href
+        : "Link generation failed. You can copy the current URL to share.\n\n" + window.location.href;
+      showCopyModal(errMsg, zh2);
       return;
     }
 
     const msg = zh2
-      ? '我的星途成长报告 🌟\n成长原型：「' + archetype + '」｜最匹配方向：' + top1 + '\n\n👇 点击查看完整报告\n' + reportUrl
-      : 'My StarPath Report 🌟\nArchetype: ' + archetype + ' | Top match: ' + top1 + '\n\n👇 View full report\n' + reportUrl;
+      ? "我的星途成长报告 🌟\n成长原型：「" + archetype + "」｜最匹配方向：" + top1 + "\n\n👇 点击查看完整报告\n" + reportUrl
+      : "My StarPath Report 🌟\nArchetype: " + archetype + " | Top match: " + top1 + "\n\n👇 View full report\n" + reportUrl;
 
-    // Safari 在 async/await 后无法自动写剪贴板
-    // 直接显示弹窗，用户点"复制"按钮（真实用户手势）100% 可靠
     setShareLoading(false);
     showCopyModal(msg, zh2);
   };
@@ -1156,6 +1172,7 @@ export default function StarPathC() {
   const downloadPDF = () => {
     if (!profile) return;
     setDownloading(true);
+    try {
     const P = profile;
     const zh = lang === "zh";
     const studentName = name || (zh ? "学生" : "Student");
@@ -1474,7 +1491,7 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
       + '<div style="display:flex;gap:8px;">'
       + '<button onclick="window.frames[\'pdf-frame\'].print()" style="background:#6AAF3D;color:#fff;border:none;border-radius:6px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;">'
       + (zh ? '打印 / 保存 PDF' : 'Print / Save PDF') + '</button>'
-      + '<button onclick="document.getElementById(\'pdf-overlay\').remove();URL.revokeObjectURL(\''+blobUrl+'\');" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:6px;padding:7px 12px;font-size:12px;cursor:pointer;font-family:sans-serif;">✕ ' + (zh ? '关闭' : 'Close') + '</button>'
+      + '<button onclick="document.getElementById(\'pdf-overlay\').remove();" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:6px;padding:7px 12px;font-size:12px;cursor:pointer;font-family:sans-serif;">✕ ' + (zh ? '关闭' : 'Close') + '</button>'
       + '</div>';
 
     const iframe = document.createElement('iframe');
@@ -1486,8 +1503,11 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
     overlay.appendChild(toolbar);
     overlay.appendChild(iframe);
     document.body.appendChild(overlay);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
     setDownloading(false);
+    } catch(e) {
+      console.warn('PDF error:', e);
+      setDownloading(false);
+    }
   };
 
   const resetAll = () => {
@@ -1608,11 +1628,13 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
       <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}
         style={{minHeight:"100vh",background:G.cream,fontFamily:"'Nunito',sans-serif",display:"flex",flexDirection:"column"}}>
         <style>{CSS}</style>
-        <button className="lbtn" onClick={()=>setLang(l=>l==="zh"?"en":"zh")}>{t.lang}</button>
-
-        {/* Sticky header */}
+        {/* Sticky header - 语言按钮整合进来 */}
         <div style={{position:"sticky",top:0,background:"rgba(245,249,243,.96)",backdropFilter:"blur(14px)",zIndex:10,borderBottom:"1px solid rgba(26,58,42,.06)"}}>
-          <div style={{maxWidth:580,margin:"0 auto",padding:"14px 20px 0"}}>
+          <div style={{maxWidth:580,margin:"0 auto",padding:"10px 20px 0"}}>
+            {/* 顶部：语言切换 */}
+            <div style={{display:"flex",justifyContent:"flex-end",marginBottom:6}}>
+              <button className="lbtn-inline" onClick={()=>setLang(l=>l==="zh"?"en":"zh")}>{t.lang}</button>
+            </div>
             {/* Section tabs */}
             <div style={{display:"flex",gap:4,overflowX:"auto",paddingBottom:10}}>
               {SECS_.map(s=>{
