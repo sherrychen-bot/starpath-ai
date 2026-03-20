@@ -698,7 +698,7 @@ export default function StarPathC() {
 
 
   // 生成邀请二维码（当 tab=send 时）
-  React.useEffect(() => {
+  useEffect(() => {
     if (phase !== 'result' || tab !== 'send') return;
     const loadQR = () => {
       const canvas = document.getElementById('invite-qr-canvas');
