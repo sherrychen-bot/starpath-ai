@@ -701,23 +701,24 @@ export default function StarPathC() {
   useEffect(() => {
     if (phase !== 'result' || tab !== 'send') return;
     const loadQR = () => {
-      const canvas = document.getElementById('invite-qr-canvas');
-      if (!canvas) return;
+      const el = document.getElementById('invite-qr-canvas');
+      if (!el) return;
+      el.innerHTML = '';  // 清空旧二维码
       const baseUrl = window.location.href.split('#')[0].split('?')[0];
-      if (window.QRCode) {
-        canvas.getContext('2d').clearRect(0,0,120,120);
-        new window.QRCode(canvas, { text: baseUrl, width: 120, height: 120,
+      const makeQR = () => {
+        const el2 = document.getElementById('invite-qr-canvas');
+        if (!el2) return;
+        el2.innerHTML = '';
+        new window.QRCode(el2, { text: baseUrl, width: 120, height: 120,
           colorDark: '#1A3A2A', colorLight: '#ffffff',
           correctLevel: window.QRCode.CorrectLevel.M });
+      };
+      if (window.QRCode) {
+        makeQR();
       } else {
         const s = document.createElement('script');
         s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-        s.onload = () => {
-          const c = document.getElementById('invite-qr-canvas');
-          if (c) new window.QRCode(c, { text: baseUrl, width: 120, height: 120,
-            colorDark: '#1A3A2A', colorLight: '#ffffff',
-            correctLevel: window.QRCode.CorrectLevel.M });
-        };
+        s.onload = makeQR;
         document.head.appendChild(s);
       }
     };
@@ -2268,7 +2269,7 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
                       <div style={{textAlign:"center",marginBottom:14,padding:"14px",background:"rgba(26,58,42,.03)",borderRadius:12,border:"1px solid rgba(26,58,42,.07)"}}>
                         <div style={{fontSize:11,color:G.muted,marginBottom:10,fontWeight:700}}>{zh?"扫码邀请好友测评":"Scan to invite friends"}</div>
                         <div id="invite-qr" style={{display:"inline-block",background:"#fff",padding:8,borderRadius:8,boxShadow:"0 2px 8px rgba(0,0,0,.08)"}}>
-                          <canvas id="invite-qr-canvas" width="120" height="120"/>
+                          <div id="invite-qr-canvas" style={{width:120,height:120}}/>
                         </div>
                         <p style={{fontSize:10,color:G.muted,marginTop:8,opacity:.6}}>{zh?"无需登录，扫码即可测评":"No login — scan & go"}</p>
                       </div>
