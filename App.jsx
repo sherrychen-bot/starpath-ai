@@ -1327,8 +1327,7 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
         const lyOff = ly < cy ? -3 : 3;
         const vyOff = vy < cy ? -2 : 4;
         const lblSz = zh ? 8 : 7;
-        return \`<text x="\${lx.toFixed(1)}" y="\${(ly+lyOff).toFixed(1)}" text-anchor="\${anchor}" font-size="\${lblSz}" font-weight="700" fill="rgba(26,58,42,0.55)" font-family="sans-serif">\${d.label}</text>
-                <text x="\${vx.toFixed(1)}" y="\${(vy+vyOff).toFixed(1)}" text-anchor="\${anchor}" font-size="9.5" font-weight="800" fill="#6AAF3D" font-family="sans-serif">\${d.val}</text>\`;
+        return `<text x="${lx.toFixed(1)}" y="${(ly+lyOff).toFixed(1)}" text-anchor="${anchor}" font-size="${lblSz}" font-weight="700" fill="rgba(26,58,42,0.55)" font-family="sans-serif">${d.label}</text><text x="${vx.toFixed(1)}" y="${(vy+vyOff).toFixed(1)}" text-anchor="${anchor}" font-size="9.5" font-weight="800" fill="#6AAF3D" font-family="sans-serif">${d.val}</text>`;
       });
       return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
         <defs><radialGradient id="rg3"><stop offset="0%" stop-color="#6AAF3D" stop-opacity="0.18"/><stop offset="100%" stop-color="#6AAF3D" stop-opacity="0.03"/></radialGradient></defs>
