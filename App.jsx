@@ -1059,17 +1059,37 @@ export default function StarPathC() {
     const copyBtn = document.createElement('button');
     copyBtn.style.cssText = 'flex:1;background:#2D5A3D;color:#fff;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:Nunito,sans-serif;transition:background .2s;';
     copyBtn.textContent = isZh ? '📋 复制链接' : '📋 Copy Link';
-    copyBtn.onclick = () => {
+    copyBtn.onclick = async () => {
+      const success = () => {
+        copyBtn.style.background = '#4A8C5C';
+        copyBtn.textContent = isZh ? '✓ 已复制！' : '✓ Copied!';
+        setTimeout(() => {
+          copyBtn.style.background = '#2D5A3D';
+          copyBtn.textContent = isZh ? '📋 复制链接' : '📋 Copy Link';
+        }, 2500);
+      };
+      // 1. 现代浏览器 clipboard API
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try { await navigator.clipboard.writeText(text); success(); return; } catch(e) {}
+      }
+      // 2. 微信/旧浏览器 fallback — execCommand
       document.body.appendChild(textarea);
-      textarea.select(); textarea.setSelectionRange(0, 999999);
-      try { document.execCommand('copy'); } catch(e) {}
-      document.body.removeChild(textarea);
-      copyBtn.style.background = '#4A8C5C';
-      copyBtn.textContent = isZh ? '✓ 已复制！' : '✓ Copied!';
-      setTimeout(() => {
-        copyBtn.style.background = '#2D5A3D';
-        copyBtn.textContent = isZh ? '📋 复制链接' : '📋 Copy Link';
-      }, 2500);
+      textarea.focus(); textarea.select(); textarea.setSelectionRange(0, 99999);
+      try {
+        const ok = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        if (ok) { success(); return; }
+      } catch(e) { document.body.removeChild(textarea); }
+      // 3. 微信最终 fallback — Web Share API
+      if (navigator.share) {
+        try {
+          await navigator.share({ text: text });
+          success(); return;
+        } catch(e) {}
+      }
+      // 4. 什么都不行 — 提示手动复制
+      copyBtn.textContent = isZh ? '长按链接复制' : 'Long press to copy';
+      setTimeout(() => { copyBtn.textContent = isZh ? '📋 复制链接' : '📋 Copy Link'; }, 3000);
     };
 
     const closeBtn = document.createElement('button');
@@ -1287,8 +1307,9 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
   <div>
     <div class="lbl">${zh?"五维能力画像":"Capability Profile"}</div>
     ${(()=>{
-      const W=zh?240:230, H=zh?250:240;
-      const cx=W/2, cy=H/2-5, r=zh?68:62;
+      const W=zh?300:290, H=zh?300:290;
+      const cx=W/2, cy=H/2;
+      const r=zh?72:68;
       const items=radarData, n=items.length;
       const angle=(i)=>(Math.PI*2*i/n)-Math.PI/2;
       const pt=(i,s)=>[cx+Math.cos(angle(i))*r*s, cy+Math.sin(angle(i))*r*s];
@@ -1296,13 +1317,18 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
       const poly=items.map((d,i)=>pt(i,d.val/100)).map((p,i)=>`${i===0?'M':'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ')+'Z';
       const axes=items.map((_,i)=>{const[x,y]=pt(i,1);return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(26,58,42,0.1)" stroke-width="0.8"/>`;});
       const dots=items.map((d,i)=>{const[x,y]=pt(i,d.val/100);return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" fill="#6AAF3D" stroke="white" stroke-width="1.2"/>`;});
-      const lblSize=zh?8:7.5;
-      const lblScale=1.52;
+      const lblScale=1.42;
+      const valScale=1.22;
       const labels=items.map((d,i)=>{
-        const[x,y]=pt(i,lblScale);
-        const anchor=x<cx-5?'end':x>cx+5?'start':'middle';
-        return `<text x="${x.toFixed(1)}" y="${(y-4).toFixed(1)}" text-anchor="${anchor}" font-size="${lblSize}" font-weight="700" fill="rgba(26,58,42,0.5)" font-family="sans-serif">${d.label}</text>
-                <text x="${x.toFixed(1)}" y="${(y+7).toFixed(1)}" text-anchor="${anchor}" font-size="${lblSize+1.5}" font-weight="800" fill="#6AAF3D" font-family="sans-serif">${d.val}</text>`;
+        const[lx,ly]=pt(i,lblScale);
+        const[vx,vy]=pt(i,valScale);
+        const anchor=lx<cx-8?'end':lx>cx+8?'start':'middle';
+        // 标签偏移：顶部往上，底部往下，左右稍微外移
+        const lyOff = ly < cy ? -3 : 3;
+        const vyOff = vy < cy ? -2 : 4;
+        const lblSz = zh ? 8 : 7;
+        return \`<text x="\${lx.toFixed(1)}" y="\${(ly+lyOff).toFixed(1)}" text-anchor="\${anchor}" font-size="\${lblSz}" font-weight="700" fill="rgba(26,58,42,0.55)" font-family="sans-serif">\${d.label}</text>
+                <text x="\${vx.toFixed(1)}" y="\${(vy+vyOff).toFixed(1)}" text-anchor="\${anchor}" font-size="9.5" font-weight="800" fill="#6AAF3D" font-family="sans-serif">\${d.val}</text>\`;
       });
       return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
         <defs><radialGradient id="rg3"><stop offset="0%" stop-color="#6AAF3D" stop-opacity="0.18"/><stop offset="100%" stop-color="#6AAF3D" stop-opacity="0.03"/></radialGradient></defs>
@@ -1384,8 +1410,12 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
       ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
       document.body.appendChild(ta);
       ta.select(); ta.setSelectionRange(0, 99999);
-      try { document.execCommand('copy'); } catch(e) {}
+      var copied = false;
+      try { copied = document.execCommand('copy'); } catch(e) {}
       document.body.removeChild(ta);
+      if (!copied && navigator.share) {
+        navigator.share({ text: prefix + url }).catch(function(){});
+      }
       btn.style.background = '#4A8C5C';
       btn.textContent = '${zh ? "✓ 已复制" : "✓ Copied"}';
       setTimeout(function(){ btn.style.background = 'rgba(255,255,255,.1)'; btn.textContent = '${zh ? "🔗 分享" : "🔗 Share"}'; }, 2500);
@@ -1398,9 +1428,6 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
 </body></html>`;
 
     // 用 iframe 在当前页面内全屏显示报告 — Safari 100% 兼容，不需要弹窗权限
-    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-    const blobUrl = URL.createObjectURL(blob);
-
     const overlay = document.createElement('div');
     overlay.id = 'pdf-overlay';
     // 同步设置 _reportUrl（用于 PDF 内的分享按钮）
@@ -1426,7 +1453,8 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
 
     const iframe = document.createElement('iframe');
     iframe.name = 'pdf-frame';
-    iframe.src = blobUrl;
+    // srcdoc：直接注入HTML，无需 blob URL，微信/Safari 100% 兼容
+    iframe.srcdoc = html;
     iframe.style.cssText = 'flex:1;border:none;width:100%;';
 
     overlay.appendChild(toolbar);
