@@ -1272,7 +1272,7 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
 .report-date{font-size:8px;color:rgba(255,255,255,.4);letter-spacing:1px;}
 
 /* HERO */
-.hero{padding:${zh?'10px 22px 9px':'12px 22px 10px'};border-bottom:2px solid #EAF2E5;}
+.hero{padding:${zh?'10px 22px 9px':'12px 22px 10px'};border-bottom:2px solid #EAF2E5;page-break-after:avoid;break-after:avoid;}
 .badge{display:inline-block;padding:2px 9px;border-radius:20px;background:rgba(106,175,61,.1);border:1px solid rgba(106,175,61,.28);font-size:${zh?'8px':'7.5px'};font-weight:800;color:#2D5A3D;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:${zh?'4px':'5px'};}
 .meta{font-size:9px;color:#6AAF3D;font-weight:700;letter-spacing:1px;margin-bottom:3px;}
 .personality{font-family:'Playfair Display',serif;font-size:${zh?'19px':'18px'};color:#1A3A2A;margin-bottom:4px;line-height:1.2;}
@@ -1333,7 +1333,7 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
   <div class="report-date">${zh?"星途成长报告":"Growth Profile Report"} · ${new Date().toLocaleDateString(zh?'zh-CN':'en-US')}</div>
 </div>
 
-<div style="break-inside:avoid;page-break-inside:avoid"><div class="hero">
+<div class="hero">
   ${P.snap?.archetype?`<div class="badge">${P.snap.archetype}</div>`:''}
   ${name?`<div class="meta">${name} · ${t.grade(P.snap?.grade||'')} · ${t.school(P.snap?.schoolType||'')}</div>`:''}
   <div class="personality">${P.snap?.personality||''}</div>
@@ -1342,7 +1342,7 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
 </div>
 
 <!-- RADAR + STRENGTHS -->
-<div class="rc">
+<div class="rc" style="break-before:avoid;page-break-before:avoid">
   <div style="text-align:center">
     <div class="lbl" style="text-align:center">${zh?"五维能力画像":"Capability Profile"}</div>
     ${(()=>{
@@ -1388,7 +1388,6 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
     <div class="gbox">${P.summary?.watchOut||''}</div>
   </div>
 </div>
-</div><!-- /hero-rc-wrap -->
 
 <!-- KEY INSIGHT -->
 <div class="S">
