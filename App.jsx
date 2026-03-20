@@ -720,18 +720,30 @@ export default function StarPathC() {
       const makeQR = () => {
         const el2 = document.getElementById('invite-qr-canvas');
         if (!el2) return;
+        // 如果已经有 canvas/img 子元素说明已生成
+        if (el2.querySelector('canvas,img')) return;
         el2.innerHTML = '';
-        new window.QRCode(el2, { text: baseUrl, width: 120, height: 120,
-          colorDark: '#1A3A2A', colorLight: '#ffffff',
-          correctLevel: window.QRCode.CorrectLevel.M });
+        try {
+          new window.QRCode(el2, { text: baseUrl, width: 120, height: 120,
+            colorDark: '#1A3A2A', colorLight: '#ffffff',
+            correctLevel: window.QRCode.CorrectLevel.M });
+        } catch(e) {
+          el2.innerHTML = '<div style="width:120px;height:120px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#888;text-align:center">' + baseUrl + '</div>';
+        }
       };
       if (window.QRCode) {
         makeQR();
       } else {
-        const s = document.createElement('script');
-        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-        s.onload = makeQR;
-        document.head.appendChild(s);
+        if (document.querySelector('script[src*=qrcode]')) {
+          // 已在加载中，等待
+          const waitQR = setInterval(() => { if(window.QRCode){clearInterval(waitQR);makeQR();} }, 200);
+          setTimeout(() => clearInterval(waitQR), 5000);
+        } else {
+          const s = document.createElement('script');
+          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+          s.onload = makeQR;
+          document.head.appendChild(s);
+        }
       }
     };
     setTimeout(loadQR, 300);
@@ -1401,8 +1413,23 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
     <button onclick="window.print()" style="background:#6AAF3D;color:#fff;border:none;border-radius:6px;padding:7px 18px;font-size:11px;font-weight:700;cursor:pointer;font-family:sans-serif;">${zh ? '下载 / 打印 PDF' : 'Download / Print PDF'}</button>
     <button id="pdfShareBtn" onclick="
       var btn = this;
-      var url = window._reportUrl || (window.opener && window.opener.location && window.opener.location.href) || '';
-      if (!url) { btn.textContent = '${zh ? "生成中…" : "Generating…"}'; return; }
+      var url = window._reportUrl || '';
+      if (!url) {
+        // 轮询等待 _reportUrl 生成（最多10秒）
+        btn.textContent = '${zh ? "生成中…" : "Generating…"}';
+        var tries = 0;
+        var poll = setInterval(function() {
+          tries++;
+          if (window._reportUrl) {
+            clearInterval(poll);
+            btn.click(); // 重新触发点击
+          } else if (tries > 20) {
+            clearInterval(poll);
+            btn.textContent = '${zh ? "⚠️ 链接生成失败" : "⚠️ Failed"}';
+          }
+        }, 500);
+        return;
+      }
       var prefix = '${zh ? "我的星途成长报告 🌟\n点击查看完整报告：" : "My StarPath Report 🌟\nView here: "}';
       var ta = document.createElement('textarea');
       ta.value = prefix + url;
