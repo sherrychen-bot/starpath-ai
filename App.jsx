@@ -599,6 +599,7 @@ export default function StarPathC() {
   const [downloading, setDownloading] = useState(false);
 
   const t    = T[lang];
+  const zh   = lang === "zh";  // 全局可用
   const ageGroup = ans['pr1'] ? getAgeGroup(ans['pr1']) : 'high';
   const QS   = buildQ(lang, ageGroup);
   const SECS_ = SECS(lang);
