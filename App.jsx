@@ -35,7 +35,7 @@ const T = {
     // email gate
     gateTitle: "最后一步，获取你的完整报告",
     gateDesc:  "填写姓名和邮箱，即可查看你的专属成长画像，并保存报告链接。",
-    namePH: "你的名字（可选）", emailPH: "your@email.com",
+    namePH: "你的名字", emailPH: "your@email.com",
     gateBtn: "查看完整报告 →", gateSkip: "先跳过",
     gateNote: "不会收到垃圾邮件。数据安全加密保存。",
     // report
@@ -87,7 +87,7 @@ const T = {
     retry: "Try Again", backQ: "Review answers", lang: "中文",
     gateTitle: "Your profile is ready!",
     gateDesc:  "Fill in your info to save your full report.",
-    namePH: "Your name (optional)", emailPH: "your@email.com",
+    namePH: "Your name", emailPH: "your@email.com",
     gateBtn: "View Full Report →", gateSkip: "Skip for now",
     gateNote: "No spam. Your data is encrypted and private.",
     rptTitle: "StarPath Profile Report",
@@ -697,6 +697,33 @@ export default function StarPathC() {
   }, []);
 
 
+  // 生成邀请二维码（当 tab=send 时）
+  React.useEffect(() => {
+    if (phase !== 'result' || tab !== 'send') return;
+    const loadQR = () => {
+      const canvas = document.getElementById('invite-qr-canvas');
+      if (!canvas) return;
+      const baseUrl = window.location.href.split('#')[0].split('?')[0];
+      if (window.QRCode) {
+        canvas.getContext('2d').clearRect(0,0,120,120);
+        new window.QRCode(canvas, { text: baseUrl, width: 120, height: 120,
+          colorDark: '#1A3A2A', colorLight: '#ffffff',
+          correctLevel: window.QRCode.CorrectLevel.M });
+      } else {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+        s.onload = () => {
+          const c = document.getElementById('invite-qr-canvas');
+          if (c) new window.QRCode(c, { text: baseUrl, width: 120, height: 120,
+            colorDark: '#1A3A2A', colorLight: '#ffffff',
+            correctLevel: window.QRCode.CorrectLevel.M });
+        };
+        document.head.appendChild(s);
+      }
+    };
+    setTimeout(loadQR, 300);
+  }, [phase, tab]);
+
   // confetti on result
   useEffect(() => {
     if (phase !== "result") return;
@@ -1239,7 +1266,7 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
   <div>
     <div class="lbl">${zh?"五维能力画像":"Capability Profile"}</div>
     ${(()=>{
-      const W=zh?175:165, H=zh?185:175;
+      const W=zh?210:200, H=zh?220:210;
       const cx=W/2, cy=H/2-5, r=zh?68:62;
       const items=radarData, n=items.length;
       const angle=(i)=>(Math.PI*2*i/n)-Math.PI/2;
@@ -1249,7 +1276,7 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
       const axes=items.map((_,i)=>{const[x,y]=pt(i,1);return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(26,58,42,0.1)" stroke-width="0.8"/>`;});
       const dots=items.map((d,i)=>{const[x,y]=pt(i,d.val/100);return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" fill="#6AAF3D" stroke="white" stroke-width="1.2"/>`;});
       const lblSize=zh?8:7.5;
-      const lblScale=1.42;
+      const lblScale=1.52;
       const labels=items.map((d,i)=>{
         const[x,y]=pt(i,lblScale);
         const anchor=x<cx-5?'end':x>cx+5?'start':'middle';
@@ -2235,6 +2262,15 @@ body{font-family:'Nunito',sans-serif;background:#fff;color:#1E2B1E;}
                           style={{width:"100%",padding:"11px 16px",borderRadius:10,background:inviteCopied?`${G.green}10`:`${G.green}10`,border:`1.5px solid ${G.green}30`,fontSize:13,fontWeight:700,color:G.green,cursor:"pointer",fontFamily:"'Nunito',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:16,transition:"all .2s"}}>
                           {inviteCopied ? <>✓ {zh?"已复制！去发给朋友吧":"Copied! Send to friends"}</> : <>🌟 {t.inviteBtn} →</>}
                         </button>
+                      </div>
+
+                      {/* 邀请二维码 */}
+                      <div style={{textAlign:"center",marginBottom:14,padding:"14px",background:"rgba(26,58,42,.03)",borderRadius:12,border:"1px solid rgba(26,58,42,.07)"}}>
+                        <div style={{fontSize:11,color:G.muted,marginBottom:10,fontWeight:700}}>{zh?"扫码邀请好友测评":"Scan to invite friends"}</div>
+                        <div id="invite-qr" style={{display:"inline-block",background:"#fff",padding:8,borderRadius:8,boxShadow:"0 2px 8px rgba(0,0,0,.08)"}}>
+                          <canvas id="invite-qr-canvas" width="120" height="120"/>
+                        </div>
+                        <p style={{fontSize:10,color:G.muted,marginTop:8,opacity:.6}}>{zh?"无需登录，扫码即可测评":"No login — scan & go"}</p>
                       </div>
 
                       {/* Share report link */}
